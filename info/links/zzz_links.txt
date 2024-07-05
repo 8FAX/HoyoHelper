@@ -1,0 +1,8 @@
+{
+    reward_info: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/home?lang=en-us&act_id=e202406031448091",
+    day_counter: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id=e202406031448091",
+    time_info: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/recommend?act_id=e202406031448091&plat=PT_PC&lang=en-us",
+    signin_check: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id=e202406031448091",
+    signin: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/sign",
+    id: "e202406031448091"
+}
