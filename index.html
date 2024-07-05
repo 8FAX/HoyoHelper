@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Project</title>
+    <title>Hoyo Helper</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -48,6 +48,7 @@
         .content {
             text-align: center;
             max-width: 800px;
+            width: 100%;
         }
         .card {
             background-color: white;
@@ -72,28 +73,84 @@
 </head>
 <body>
     <header>
-        <h1>Welcome to My Project</h1>
+        <h1>Hoyo Helper</h1>
     </header>
     <nav>
         <ul>
-            <li><a href="updates/update1.html">Update 1</a></li>
-            <li><a href="updates/update2.html">Update 2</a></li>
+            <li><a href="updates/updates.html">Latest updates</a></li>
+            <li><a href="Setup/setup.html">Setup</a></li>
+            <li><a href="https://discordapp.com/users/223433394023956480">Discord</a></li>
             <li><a href="assets/image1.jpg" download>Download Image 1</a></li>
             <li><a href="assets/image2.png" download>Download Image 2</a></li>
         </ul>
     </nav>
     <div class="content">
         <div class="card">
-            <h2>Latest Updates</h2>
-            <p>Check out the latest updates to stay informed about our project's progress.</p>
+            <h2>FAQ or Dev Log?</h2>
+            <p>Should I make this info a FAQ or a Dev log type of thing? I think a dev log would be best!</p>
         </div>
         <div class="card">
-            <h2>Downloadable Assets</h2>
-            <p>Click the links above to download the assets you need for your work.</p>
+            <h2>Getting Started</h2>
+            <p>There is no setup guide at the moment, but you can clone the repo from <a href="https://github.com/8FAX/HoyoHelper">GitHub</a>. Below you can see a copy of the .env file.</p>
+        </div>
+        <div class="card">
+            <h2>.env</h2>
+            <p><code>discord_id="223433394023956480"
+                discord_webhook="https://discord.com/api/webhooks/1253527569949528184/Dwftfbs26vvz5wc5oYli-ZsXHw25IRdbbCkGcjxYoZ3bE0bPF1bdeDzMzC6L6pPJ7Fxi"
+                
+                
+                gi_links=[
+                    reward_info: "https://sg-hk4e-api.hoyolab.com/event/sol/home?lang=en-us&act_id=e202102251931481",
+                    day_counter: "https://sg-hk4e-api.hoyolab.com/event/sol/info?lang=en-us&act_id=e202102251931481",
+                    time_info: "https://sg-hk4e-api.hoyolab.com/event/sol/recommend/info?act_id=e202102251931481&plat=PT_PC&lang=en-us",
+                    signin_check: "https://sg-hk4e-api.hoyolab.com/event/sol/info?lang=en-us&act_id=e202102251931481",
+                    signin: "https://sg-hk4e-api.hoyolab.com/event/sol/sign?lang=en-us",
+                    id: "e202102251931481"
+                ]
+                
+                hrs_links=[
+                    reward_info: "https://sg-public-api.hoyolab.com/event/luna/os/home?lang=en-us&act_id=e202303301540311",
+                    day_counter: "https://sg-public-api.hoyolab.com/event/luna/os/info?lang=en-us&act_id=e202303301540311",
+                    time_info: "https://sg-public-api.hoyolab.com/event/luna/os/recommend?act_id=e202303301540311&plat=PT_PC&lang=en-us",
+                    signin_check: "https://sg-public-api.hoyolab.com/event/luna/os/info?lang=en-us&act_id=e202303301540311",
+                    signin: "https://sg-public-api.hoyolab.com/event/luna/os/sign",
+                    id: "e202303301540311"
+                ]
+                
+                zzz_links=[
+                    reward_info: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/home?lang=en-us&act_id=e202406031448091",
+                    day_counter: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id=e202406031448091",
+                    time_info: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/recommend?act_id=e202406031448091&plat=PT_PC&lang=en-us",
+                    signin_check: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id=e202406031448091",
+                    signin: "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/sign",
+                    id: "e202406031448091"
+                ]
+                
+                num_of_accounts="4"
+                
+                account_1_cookie="cookie1"
+                account_1_name="test1"
+                account_1_games="gi"
+                
+                account_2_cookie="cookie2"
+                account_2_name="test2"
+                account_2_games="gi"
+                
+                account_3_cookie="cookie3"
+                account_3_name="test3"
+                account_3_games="gi,zzz"
+                
+                account_4_cookie="cookie4"
+                account_4_name="test4"
+                account_4_games="gi,hrs,zzz"</code></p>
+        </div>
+        <div class="card">
+            <h2>What is Hoyo Helper?</h2>
+            <p>Hoyo Helper is a project that aims to help the community of Genshin Impact by providing useful tools and information.</p>
         </div>
     </div>
     <footer>
-        <p>&copy; 2024 My Project. All rights reserved.</p>
+        <p>Made with ♥ by 8FA</p>
     </footer>
 </body>
 </html>

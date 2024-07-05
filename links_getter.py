@@ -1,4 +1,5 @@
 import requests
+import json
 
 def get_links(url):
     headers = {
@@ -21,6 +22,10 @@ def get_links(url):
 }
     response = requests.get(url, headers=headers)
     print(response.text)
+    return response.text
 
 if __name__ == "__main__":
-    get_links("https://8fax.github.io/HoyoHelper/info/links.txt")
+    links = get_links("https://8fax.github.io/HoyoHelper/info/links.txt")
+    links = json.loads(links)
+    cool_links = links["signin"]
+    print(cool_links)
