@@ -4,13 +4,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Project</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            background-color: #4CAF50;
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        nav {
+            margin: 20px 0;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav li {
+            display: inline;
+            margin: 0 10px;
+        }
+        nav a {
+            text-decoration: none;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .content {
+            text-align: center;
+            max-width: 800px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: scale(1.05);
+        }
+        footer {
+            margin-top: auto;
+            background-color: #4CAF50;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to My Project</h1>
+    <header>
+        <h1>Welcome to My Project</h1>
+    </header>
     <nav>
         <ul>
-            <li><a href="assets\car_dec\7.png" download>Download Image 2</a></li>
+            <li><a href="updates/update1.html">Update 1</a></li>
+            <li><a href="updates/update2.html">Update 2</a></li>
+            <li><a href="assets/image1.jpg" download>Download Image 1</a></li>
+            <li><a href="assets/image2.png" download>Download Image 2</a></li>
         </ul>
     </nav>
+    <div class="content">
+        <div class="card">
+            <h2>Latest Updates</h2>
+            <p>Check out the latest updates to stay informed about our project's progress.</p>
+        </div>
+        <div class="card">
+            <h2>Downloadable Assets</h2>
+            <p>Click the links above to download the assets you need for your work.</p>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2024 My Project. All rights reserved.</p>
+    </footer>
 </body>
 </html>
