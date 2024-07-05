@@ -9,6 +9,24 @@ from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from typing import Tuple, List, Any, Dict
 
+def header_formater(cookie: str) -> Dict[str,str]:
+    headers: Dict[str,str]  = {
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cookie": cookie,
+        "Origin": "https://act.hoyolab.com",
+        "Referer": "https://act.hoyolab.com/",
+        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": "macOS",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-site",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    }
+    return headers
+
 def time_formater(time: str) -> str:
     input_time = int(time)
     now_time = datetime.now(timezone.utc)
@@ -28,24 +46,10 @@ def time_formater(time: str) -> str:
     else:
         return f"{days}d {hours}h {minutes}m"
 
-def reward_info(cookie: str, act_id: str) -> List[Dict[str,str]]:
-    headers: Dict[str,str]  = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
+def reward_info(cookie: str, links: Dict[str,str]) -> List[Dict[str,str]]:
+    headers: dict[str,str] = header_formater(cookie)
+    rewards_url: str = links.get('reward_info')
 
-    rewards_url = f"https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/home?lang=en-us&act_id={act_id}"
     
     try:
         rewards_response: requests.Response = requests.get(rewards_url, headers=headers)
@@ -57,24 +61,10 @@ def reward_info(cookie: str, act_id: str) -> List[Dict[str,str]]:
         logging.error(f"Request for reward_info failed: {e}")
         return None
 
-def day_counter(cookie: str, act_id: str) -> int:
-    headers: Dict[str,str] = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
+def day_counter(cookie: str, links: str) -> int:
+    headers: dict[str,str] = header_formater(cookie)
     
-    day_count_url: str = f"https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id={act_id}"
+    day_count_url: str = links.get('day_counter')
 
     try:
         day_count_response: requests.Response = requests.get(day_count_url, headers=headers)
@@ -87,24 +77,10 @@ def day_counter(cookie: str, act_id: str) -> int:
         logging.error(f"Request for day_count failed: {e}")
         return None
 
-def time_info(cookie: str, act_id: str) -> str:
-    headers: Dict[str,str] = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
+def time_info(cookie: str, links: str) -> str:
+    headers: dict[str,str] = header_formater(cookie)
 
-    time_url: str = f"https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/recommend?act_id={act_id}&lang=en-us&plat=PT_M"
+    time_url: str = links.get('time_info')
 
     try:
         time_response: requests.Response = requests.get(time_url, headers=headers)
@@ -117,24 +93,10 @@ def time_info(cookie: str, act_id: str) -> str:
         logging.error(f"Request for time_info failed: {e}")
         return None
 
-def signin_check(cookie: str, act_id: str) -> bool:
-    headers: Dict[str,str] = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
+def signin_check(cookie: str, links: str) -> bool:
+    headers: dict[str,str] = header_formater(cookie)
 
-    signin_check_url: str = f"https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id={act_id}"
+    signin_check_url: str = links.get('signin_check')
 
     try:
         signin_check_response: requests.Response = requests.get(signin_check_url, headers=headers)
@@ -146,35 +108,15 @@ def signin_check(cookie: str, act_id: str) -> bool:
         logging.error(f"Request for signin_check failed: {e}")
         return False
 
-def signin(cookie: str, act_id: str) -> bool:
-    headers: Dict[str,str] = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Content-Length": "29",
-        "Content-Type": "application/json;charset=UTF-8",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Priority": "u=1, i",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "X-Rpc-App_version": "",
-        "X-Rpc-Device_id": "e2cd5b1c-7a89-472e-9795-8313f937e6ff",
-        "X-Rpc-Device_name": "",
-        "X-Rpc-Platform": "4"
-    }
+def signin(cookie: str, links: str) -> bool:
+    headers: dict[str,str] = header_formater(cookie)
 
-    url: str = "https://sg-act-nap-api.hoyolab.com/event/luna/zzz/os/sign"
+    signin_url: str = links.get('signin')
+    act_id: str = links.get('id')
     payload: Dict[str,str] = {"act_id": act_id}
 
     try:
-        response: requests.Response = requests.post(url, headers=headers, json=payload)
+        response: requests.Response = requests.post(signin_url, headers=headers, json=payload)
         response.raise_for_status()
         formatted_response: Dict[str,str] = response.json()
         if formatted_response.get('message') == "OK":
@@ -342,23 +284,23 @@ def get_account_info(i: int) -> Tuple[str, str, str]:
     games: str = os.getenv(f"account_{i}_games")
     return cookie, name, games
 
-def process_account(cookie: str, name: str, act_id: str) -> bool:
-    signedin: bool = signin_check(cookie, act_id)
+def process_account(cookie: str, name: str, links: str) -> bool:
+    signedin: bool = signin_check(cookie, links)
     logging.debug(f"Signed in status for {name}: {signedin}")
     
-    rewards: list[Dict[str,str]] = reward_info(cookie, act_id)
+    rewards: list[Dict[str,str]] = reward_info(cookie, links)
     logging.debug(f"Rewards for {name}: {rewards}")
     
-    day_count: int = day_counter(cookie, act_id)
+    day_count: int = day_counter(cookie, links)
     logging.debug(f"Day count for {name}: {day_count}")
     
-    refresh_time: str = time_info(cookie, act_id)
+    refresh_time: str = time_info(cookie, links)
     logging.debug(f"Refresh time for {name}: {refresh_time}")
     
     refresh_time_formatted: str = time_formater(refresh_time)
     logging.debug(f"Formatted refresh time for {name}: {refresh_time_formatted}")
 
-    if not cookie or not act_id or not name:
+    if not cookie or not links or not name:
         logging.error(f"Missing environment variables for account {name}.")
         return False
 
@@ -394,10 +336,10 @@ def process_account(cookie: str, name: str, act_id: str) -> bool:
             is_sent = webhook(card, message)
             if is_sent:
                 logging.info(f"Webhook sent for {name}.")
-            signin_satus = signin(cookie, act_id)
+            signin_satus = signin(cookie, links)
             if signin_satus:
                 logging.info(f"{name} has successfully signed in, now verifying...")
-                signedin = signin_check(cookie, act_id)
+                signedin = signin_check(cookie, links)
                 if signedin:
                     logging.info(f"{name} has successfully signed in and claimed their reward.")
                 else:
@@ -411,10 +353,10 @@ def process_account(cookie: str, name: str, act_id: str) -> bool:
             is_sent: bool = webhook(card, message)
             if is_sent:
                 logging.info(f"Webhook sent for {name}.")
-            signin_satus = signin(cookie, act_id)
+            signin_satus = signin(cookie, links)
             if signin_satus:
                 logging.info(f"{name} has successfully signed in, now verifying...")
-                signedin = signin_check(cookie, act_id)
+                signedin = signin_check(cookie, links)
                 if signedin:
                     logging.info(f"{name} has successfully signed in and claimed their reward.")
                 else:
@@ -441,46 +383,26 @@ def main() -> None:
     for i in range(1, int(accounts) + 1):
         logging.info(f"Processing account {i}")
         cookie, name, games = get_account_info(i)
+        logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {games}")
         games = games.split(",")
         for game in games:
-            if game == "zzz":
-                act_id = os.getenv(f"account_{i}_zzz_act_id")
-                logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {act_id}")
-                if not process_account(cookie, name, act_id):
-                    message: str = f"Failed to process account {name}, please check the logs."
-                    is_sent: bool = webhook(None, message)
-                    if is_sent:
-                        logging.info(f"Webhook sent for {name}.")
-                        time.sleep(10)
+            logging.debug(f"Game: {game}")
             if game == "gi":
-                logging.info(f"Account {name} is a Genshin account, skipping.")
-                continue
+                links = os.getenv("gi_links")
             if game == "hrs":
-                logging.info(f"Account {name} is a Honkai account, skipping.")
+                links = os.getenv("hrs_links")
+            if game == "zzz":
+                links = os.getenv("zzz_links")
+            else:
+                logging.error(f"Invalid game specified for account {name}.")
                 continue
-
-
-
-
-
-        logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {act_id}")
-        if not process_account(cookie, name, act_id):
-            message: str = f"Failed to process account {name}, please check the logs."
-            is_sent: bool = webhook(None, message)
-            if is_sent:
-                logging.info(f"Webhook sent for {name}.")
-        time.sleep(10)
+            print (links)
+            if not process_account(cookie, name, links):
+                message: str = f"Failed to process account {name}, please check the logs."
+                is_sent: bool = webhook(None, message)
+                if is_sent:
+                    logging.info(f"Webhook sent for {name}.")
+                    time.sleep(10)
 
 if __name__ == "__main__":
-    # main()
-    load_env()
-    while True:
-        cookie = "mi18nLang=en-us; _MHYUUID=70a040de-3074-47e3-8723-63c414da8804; HYV_LOGIN_PLATFORM_OPTIONAL_AGREEMENT={%22content%22:[]}; HYV_LOGIN_PLATFORM_TRACKING_MAP={%22sourceValue%22:%2276%22}; DEVICEFP_SEED_ID=bbffa532407effc2; DEVICEFP_SEED_TIME=1719630997410; _gid=GA1.2.494754028.1719630998; _gat_gtag_UA_201411121_1=1; _ga=GA1.1.1405462616.1719630997; DEVICEFP=38d7f28d5f123; _ga_54PBK3QDF4=GS1.1.1719630997.1.1.1719630998.0.0.0; _ga_T9HTWX7777=GS1.1.1719630997.1.0.1719630998.0.0.0; HYV_LOGIN_PLATFORM_LIFECYCLE_ID={%22value%22:%22b51510ec-5606-4611-bda6-7f70c35e1087%22}; HYV_LOGIN_PLATFORM_LOAD_TIMEOUT={%22value%22:null}; ltoken_v2=v2_CAISDGNlMXRidXdiMDB6axokNzBhMDQwZGUtMzA3NC00N2UzLTg3MjMtNjNjNDE0ZGE4ODA0IKX5_bMGKKign-IEMN__56oBQgtoazRlX2dsb2JhbA.pXx_ZgAAAAAB.MEUCIA-3W6Fg4IBu3uraLefBECB8S4qUyUsh7gD3v3hzMBP6AiEAzdmNuYOjSbsAnbOIsprD1c2KF_Jxs8huq7hff75Ri8o; ltmid_v2=1z39031j7i_hy; ltuid_v2=358219743"
-        name = "8FA"
-        act_id = "e202406031448091"
-        logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {act_id}")
-        if not process_account(cookie, name, act_id):
-            message: str = f"Failed to process account {name}, please check the logs."
-            is_sent: bool = webhook(None, message)
-            if is_sent:
-                logging.info(f"Webhook sent for {name}.")
+    main()

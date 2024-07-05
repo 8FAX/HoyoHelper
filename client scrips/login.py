@@ -339,7 +339,7 @@ def load_env() -> bool:
 def get_account_info(i: int) -> Tuple[str, str, str]:
     cookie: str = os.getenv(f"account_{i}_cookie")
     name: str = os.getenv(f"account_{i}_name")
-    act_id: str = os.getenv(f"account_{i}_id")
+    act_id: str = os.getenv(f"account_{i}_games")
     return cookie, name, act_id
 
 def process_account(cookie: str, name: str, act_id: str) -> bool:
@@ -440,9 +440,20 @@ def main() -> None:
 
     for i in range(1, int(accounts) + 1):
         logging.info(f"Processing account {i}")
-        cookie, name, act_id = get_account_info(i)
-        logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {act_id}")
-        if not process_account(cookie, name, act_id):
+        cookie, name, games = get_account_info(i)
+        logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {games}")
+        games = games.split(",")
+        for game in games:
+            logging.debug(f"Game: {game}")
+            if game == "gi":
+                act_id = "e202009291139501"
+                logging.debug(f"Act ID: {act_id}")
+                if not process_account(cookie, name, act_id):
+                    message: str = f"Failed to process account {name}, please check the logs."
+                    is_sent: bool = webhook(None, message)
+                    if is_sent:
+                        logging.info(f"Webhook sent for {name}.")
+        if not process_account(cookie, name, games):
             message: str = f"Failed to process account {name}, please check the logs."
             is_sent: bool = webhook(None, message)
             if is_sent:
