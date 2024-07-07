@@ -1,8 +1,8 @@
 {
-    reward_info: "https://sg-public-api.hoyolab.com/event/luna/os/home?lang=en-us&act_id=e202303301540311",
-    day_counter: "https://sg-public-api.hoyolab.com/event/luna/os/info?lang=en-us&act_id=e202303301540311",
-    time_info: "https://sg-public-api.hoyolab.com/event/luna/os/recommend?act_id=e202303301540311&plat=PT_PC&lang=en-us",
-    signin_check: "https://sg-public-api.hoyolab.com/event/luna/os/info?lang=en-us&act_id=e202303301540311",
-    signin: "https://sg-public-api.hoyolab.com/event/luna/os/sign",
-    id: "e202303301540311"
+    "reward_info": "https://sg-public-api.hoyolab.com/event/luna/os/home?lang=en-us&act_id=e202303301540311",
+    "day_counter": "https://sg-public-api.hoyolab.com/event/luna/os/info?lang=en-us&act_id=e202303301540311",
+    "time_info": "https://sg-public-api.hoyolab.com/event/luna/os/recommend?act_id=e202303301540311&plat=PT_PC&lang=en-us",
+    "signin_check": "https://sg-public-api.hoyolab.com/event/luna/os/info?lang=en-us&act_id=e202303301540311",
+    "signin": "https://sg-public-api.hoyolab.com/event/luna/os/sign",
+    "id": "e202303301540311"
 }
