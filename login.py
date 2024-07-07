@@ -49,7 +49,6 @@ def get_links(url: str) -> Dict[str,str]:
     }
     try:
         response = requests.get(url, headers=headers)
-        print(response.text)
         response = json.loads(response.text)
         return response
     
@@ -419,15 +418,13 @@ def main() -> None:
         cookie, name, games = get_account_info(i)
         logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {games}")
         games = games.split(",")
-        print(games)
         for game in games:
-            print (game)
             logging.debug(f"Game: {game}")
             if game == "gi":
                 links = get_links("https://8fax.github.io/HoyoHelper/info/links/gi_links.txt")
-            if game == "hsr":
+            elif game == "hsr":
                 links = get_links("https://8fax.github.io/HoyoHelper/info/links/hsr_links.txt")
-            if game == "zzz":
+            elif game == "zzz":
                 links = get_links("https://8fax.github.io/HoyoHelper/info/links/zzz_links.txt")
             else:
                 logging.error(f"Invalid game specified for account {name}.")
