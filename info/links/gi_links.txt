@@ -1,5 +1,5 @@
 {
-   " reward_info": "https://sg-hk4e-api.hoyolab.com/event/sol/home?lang=en-us&act_id=e202102251931481",
+    "reward_info": "https://sg-hk4e-api.hoyolab.com/event/sol/home?lang=en-us&act_id=e202102251931481",
     "day_counter": "https://sg-hk4e-api.hoyolab.com/event/sol/info?lang=en-us&act_id=e202102251931481",
     "time_info": "https://sg-hk4e-api.hoyolab.com/event/sol/recommend/info?act_id=e202102251931481&plat=PT_PC&lang=en-us",
     "signin_check": "https://sg-hk4e-api.hoyolab.com/event/sol/info?lang=en-us&act_id=e202102251931481",
