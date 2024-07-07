@@ -8,6 +8,7 @@ from io import BytesIO, BufferedReader
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from typing import Tuple, List, Any, Dict
+import json
 
 def header_formater(cookie: str) -> Dict[str,str]:
     headers: Dict[str,str]  = {
@@ -26,6 +27,38 @@ def header_formater(cookie: str) -> Dict[str,str]:
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     }
     return headers
+
+def get_links(url: str) -> Dict[str,str]:
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "If-Modified-Since": "Fri, 05 Jul 2024 03:14:57 GMT",
+        "If-None-Match": 'W/"66876531-22e"',
+        "Priority": "u=0, i",
+        "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+        "Sec-Ch-Ua-Mobile": "?1",
+        "Sec-Ch-Ua-Platform": '"Android"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
+    }
+    try:
+        response = requests.get(url, headers=headers)
+        print(response.text)
+        response = json.loads(response.text)
+        return response
+    
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Request for links failed: {e}")
+        return None
+
+
+
 
 def time_formater(time: str) -> str:
     input_time = int(time)
@@ -285,6 +318,11 @@ def get_account_info(i: int) -> Tuple[str, str, str]:
     return cookie, name, games
 
 def process_account(cookie: str, name: str, links: str) -> bool:
+
+    if not cookie or not links or not name:
+        logging.error(f"Missing environment variables for account {name}.")
+        return False
+    
     signedin: bool = signin_check(cookie, links)
     logging.debug(f"Signed in status for {name}: {signedin}")
     
@@ -299,10 +337,6 @@ def process_account(cookie: str, name: str, links: str) -> bool:
     
     refresh_time_formatted: str = time_formater(refresh_time)
     logging.debug(f"Formatted refresh time for {name}: {refresh_time_formatted}")
-
-    if not cookie or not links or not name:
-        logging.error(f"Missing environment variables for account {name}.")
-        return False
 
     if signedin:
         logging.info(f"{name} has already signed in today.")
@@ -385,18 +419,19 @@ def main() -> None:
         cookie, name, games = get_account_info(i)
         logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {games}")
         games = games.split(",")
+        print(games)
         for game in games:
+            print (game)
             logging.debug(f"Game: {game}")
             if game == "gi":
-                links = os.getenv("gi_links")
-            if game == "hrs":
-                links = os.getenv("hrs_links")
+                links = get_links("https://8fax.github.io/HoyoHelper/info/links/gi_links.txt")
+            if game == "hsr":
+                links = get_links("https://8fax.github.io/HoyoHelper/info/links/hsr_links.txt")
             if game == "zzz":
-                links = os.getenv("zzz_links")
+                links = get_links("https://8fax.github.io/HoyoHelper/info/links/zzz_links.txt")
             else:
                 logging.error(f"Invalid game specified for account {name}.")
                 continue
-            print (links)
             if not process_account(cookie, name, links):
                 message: str = f"Failed to process account {name}, please check the logs."
                 is_sent: bool = webhook(None, message)
