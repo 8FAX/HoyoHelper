@@ -8,6 +8,72 @@ from io import BytesIO, BufferedReader
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from typing import Tuple, List, Any, Dict
+import json
+
+def header_formater(cookie: str = False) -> Dict[str,str]:
+    if not cookie:
+        logging.debug("No cookie provided, returning cdn headers.")
+        headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "max-age=0",
+        "If-Modified-Since": "Fri, 05 Jul 2024 03:14:57 GMT",
+        "If-None-Match": 'W/"66876531-22e"',
+        "Priority": "u=0, i",
+        "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+        "Sec-Ch-Ua-Mobile": "?1",
+        "Sec-Ch-Ua-Platform": '"Android"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
+    }
+        return headers
+    else:
+        headers: Dict[str,str]  = {
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Cookie": cookie,
+            "Origin": "https://act.hoyolab.com",
+            "Referer": "https://act.hoyolab.com/",
+            "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": "macOS",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-site",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        }
+        return headers
+
+def get_links(url: str) -> Dict[str,str]:
+    headers: dict[str,str] = header_formater()
+    try:
+        response = requests.get(url, headers=headers)
+        response = json.loads(response.text)
+        return response
+    
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Request for links failed: {e}")
+        return None
+    
+def get_assets(url: str) -> Image.Image:
+    headers: dict[str,str] = header_formater()
+    try:
+        response = requests.get(url, headers=headers)
+        image = Image.open(BytesIO(response.content))
+        return image
+    
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Request for assets failed: {e}")
+        return None
+
+
+
 
 def time_formater(time: str) -> str:
     input_time = int(time)
@@ -28,24 +94,10 @@ def time_formater(time: str) -> str:
     else:
         return f"{days}d {hours}h {minutes}m"
 
-def reward_info(cookie: str, act_id: str) -> List[Dict[str,str]]:
-    headers: Dict[str,str]  = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
+def reward_info(cookie: str, links: Dict[str,str]) -> List[Dict[str,str]]:
+    headers: dict[str,str] = header_formater(cookie)
+    rewards_url: str = links.get('reward_info')
 
-    rewards_url = f"https://sg-hk4e-api.hoyolab.com/event/sol/home?lang=en-us&act_id={act_id}"
     
     try:
         rewards_response: requests.Response = requests.get(rewards_url, headers=headers)
@@ -57,24 +109,10 @@ def reward_info(cookie: str, act_id: str) -> List[Dict[str,str]]:
         logging.error(f"Request for reward_info failed: {e}")
         return None
 
-def day_counter(cookie: str, act_id: str) -> int:
-    headers: Dict[str,str] = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
+def day_counter(cookie: str, links: str) -> int:
+    headers: dict[str,str] = header_formater(cookie)
     
-    day_count_url: str = f"https://sg-hk4e-api.hoyolab.com/event/sol/info?lang=en-us&act_id={act_id}"
+    day_count_url: str = links.get('day_counter')
 
     try:
         day_count_response: requests.Response = requests.get(day_count_url, headers=headers)
@@ -87,24 +125,10 @@ def day_counter(cookie: str, act_id: str) -> int:
         logging.error(f"Request for day_count failed: {e}")
         return None
 
-def time_info(cookie: str, act_id: str) -> str:
-    headers: Dict[str,str] = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
+def time_info(cookie: str, links: str) -> str:
+    headers: dict[str,str] = header_formater(cookie)
 
-    time_url: str = f"https://sg-hk4e-api.hoyolab.com/event/sol/recommend/info?act_id={act_id}&plat=PT_PC&lang=en-us"
+    time_url: str = links.get('time_info')
 
     try:
         time_response: requests.Response = requests.get(time_url, headers=headers)
@@ -117,24 +141,10 @@ def time_info(cookie: str, act_id: str) -> str:
         logging.error(f"Request for time_info failed: {e}")
         return None
 
-def signin_check(cookie: str, act_id: str) -> bool:
-    headers: Dict[str,str] = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    }
+def signin_check(cookie: str, links: str) -> bool:
+    headers: dict[str,str] = header_formater(cookie)
 
-    signin_check_url: str = f"https://sg-hk4e-api.hoyolab.com/event/sol/info?lang=en-us&act_id={act_id}"
+    signin_check_url: str = links.get('signin_check')
 
     try:
         signin_check_response: requests.Response = requests.get(signin_check_url, headers=headers)
@@ -146,35 +156,15 @@ def signin_check(cookie: str, act_id: str) -> bool:
         logging.error(f"Request for signin_check failed: {e}")
         return False
 
-def signin(cookie: str, act_id: str) -> bool:
-    headers: Dict[str,str] = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Content-Length": "29",
-        "Content-Type": "application/json;charset=UTF-8",
-        "Cookie": cookie,
-        "Origin": "https://act.hoyolab.com",
-        "Priority": "u=1, i",
-        "Referer": "https://act.hoyolab.com/",
-        "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": "macOS",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "X-Rpc-App_version": "",
-        "X-Rpc-Device_id": "e2cd5b1c-7a89-472e-9795-8313f937e6ff",
-        "X-Rpc-Device_name": "",
-        "X-Rpc-Platform": "4"
-    }
+def signin(cookie: str, links: str) -> bool:
+    headers: dict[str,str] = header_formater(cookie)
 
-    url: str = "https://sg-hk4e-api.hoyolab.com/event/sol/sign?lang=en-us"
+    signin_url: str = links.get('signin')
+    act_id: str = links.get('id')
     payload: Dict[str,str] = {"act_id": act_id}
 
     try:
-        response: requests.Response = requests.post(url, headers=headers, json=payload)
+        response: requests.Response = requests.post(signin_url, headers=headers, json=payload)
         response.raise_for_status()
         formatted_response: Dict[str,str] = response.json()
         if formatted_response.get('message') == "OK":
@@ -186,15 +176,17 @@ def signin(cookie: str, act_id: str) -> bool:
         logging.error(f"Request failed: {e}")
         return False
 
-def webhook(card: Image.Image, message: str) -> bool:
+def webhook(message: str, card: Image.Image = None) -> bool:
     url: str = os.getenv("discord_webhook")
     if not url:
         logging.error("Webhook URL not specified in environment variables.")
         return False
-    if card == None:
-        data: Dict[str,str] = {
-            'content': message
-        }
+    
+    data: Dict[str, str] = {
+        'content': message
+    }
+
+    if card is None:
         try:
             response: requests.Response = requests.post(url, data=data)
             response.raise_for_status()
@@ -203,28 +195,24 @@ def webhook(card: Image.Image, message: str) -> bool:
             logging.error(f"Failed to send webhook notification: {e}")
             return False
     else:
-        data: Dict[str,str] = {
-            'content': message
-        }
-
-        card.save('assets/junk/Card.png')
-        with open('assets/junk/Card.png', 'rb') as file:
-            files: Dict[str,BufferedReader] = {'file': file}
-
-            try:
-                response: requests.Response = requests.post(url, data=data, files=files)
-                response.raise_for_status()
-                return True
-            except requests.exceptions.RequestException as e:
-                logging.error(f"Failed to send webhook notification: {e}")
-                return False
+        buffer = BytesIO()
+        card.save(buffer, format="PNG" )
+        buffer.seek(0)
+        files: Dict[str, tuple] = {'file': ('Card.png', buffer, 'image/png')}
+        try:
+            response: requests.Response = requests.post(url, data=data, files=files)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Failed to send webhook notification: {e}")
+            return False
 
 def card_generator(data: Dict[str,str]) -> Image.Image:
     base_number: int = random.randint(1, 9)
-    base: Image.Image = Image.open(f'assets/cards/{base_number}.png')
+    base: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/cards/{base_number}.png')
     base = base.convert('RGB')
 
-    frame: Image.Image = Image.open('assets/other_art/UI_Frm_AlchemySimCodexPage_Bg.png')
+    frame: Image.Image = get_assets("https://8fax.github.io/HoyoHelper/assets/other_art/UI_Frm_AlchemySimCodexPage_Bg.png")
     base.paste(frame, (20, 68), frame)
     base.paste(frame, (20, 284), frame)
 
@@ -253,7 +241,7 @@ def card_generator(data: Dict[str,str]) -> Image.Image:
 
     if data['end_of_month']:
         sticker_number: int = random.randint(2, 153)
-        sticker: Image.Image = Image.open(f'assets/character_stickers/{sticker_number}.png')
+        sticker: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/character_stickers/{sticker_number}.png')
         sticker = sticker.resize((100, 100))
         if sticker.mode != 'RGBA':
             sticker = sticker.convert('RGBA')
@@ -278,7 +266,7 @@ def card_generator(data: Dict[str,str]) -> Image.Image:
         d.text((835, 100), f"days this month!", font=ImageFont.load_default().font_variant(size=23), fill="black")
 
     portrait_number: int = random.randint(2, 32)
-    portrait: Image.Image = Image.open(f'assets/car_dec/{portrait_number}.png')
+    portrait: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/car_dec/{portrait_number}.png')
     if portrait.mode != 'RGBA':
         portrait = portrait.convert('RGBA')
     base.paste(portrait, (630, 422), portrait)
@@ -339,28 +327,29 @@ def load_env() -> bool:
 def get_account_info(i: int) -> Tuple[str, str, str]:
     cookie: str = os.getenv(f"account_{i}_cookie")
     name: str = os.getenv(f"account_{i}_name")
-    act_id: str = os.getenv(f"account_{i}_games")
-    return cookie, name, act_id
+    games: str = os.getenv(f"account_{i}_games")
+    return cookie, name, games
 
-def process_account(cookie: str, name: str, act_id: str) -> bool:
-    signedin: bool = signin_check(cookie, act_id)
+def process_account(cookie: str, name: str, links: str) -> bool:
+
+    if not cookie or not links or not name:
+        logging.error(f"Missing environment variables for account {name}.")
+        return False
+    
+    signedin: bool = signin_check(cookie, links)
     logging.debug(f"Signed in status for {name}: {signedin}")
     
-    rewards: list[Dict[str,str]] = reward_info(cookie, act_id)
+    rewards: list[Dict[str,str]] = reward_info(cookie, links)
     logging.debug(f"Rewards for {name}: {rewards}")
     
-    day_count: int = day_counter(cookie, act_id)
+    day_count: int = day_counter(cookie, links)
     logging.debug(f"Day count for {name}: {day_count}")
     
-    refresh_time: str = time_info(cookie, act_id)
+    refresh_time: str = time_info(cookie, links)
     logging.debug(f"Refresh time for {name}: {refresh_time}")
     
     refresh_time_formatted: str = time_formater(refresh_time)
     logging.debug(f"Formatted refresh time for {name}: {refresh_time_formatted}")
-
-    if not cookie or not act_id or not name:
-        logging.error(f"Missing environment variables for account {name}.")
-        return False
 
     if signedin:
         logging.info(f"{name} has already signed in today.")
@@ -370,7 +359,7 @@ def process_account(cookie: str, name: str, act_id: str) -> bool:
             end_of_month = True
             data = data_parser(rewards, day_count, refresh_time_formatted , end_of_month, signedin)
             card = card_generator(data)
-            is_sent = webhook(card, message)
+            is_sent = webhook(message, card)
             if is_sent:
                 logging.info(f"Webhook sent for {name}.")
             return True
@@ -378,7 +367,7 @@ def process_account(cookie: str, name: str, act_id: str) -> bool:
             end_of_month = False
             data = data_parser(rewards, day_count, refresh_time_formatted, end_of_month, signedin)
             card = card_generator(data)
-            is_sent = webhook(card, message)
+            is_sent = webhook(message, card)
             if is_sent:
                 logging.info(f"Webhook sent for {name}.")
             return True
@@ -391,13 +380,13 @@ def process_account(cookie: str, name: str, act_id: str) -> bool:
             end_of_month = True
             data = data_parser(rewards, day_count, refresh_time_formatted, end_of_month, signedin)
             card = card_generator(data)
-            is_sent = webhook(card, message)
+            is_sent = webhook(message, card)
             if is_sent:
                 logging.info(f"Webhook sent for {name}.")
-            signin_satus = signin(cookie, act_id)
+            signin_satus = signin(cookie, links)
             if signin_satus:
                 logging.info(f"{name} has successfully signed in, now verifying...")
-                signedin = signin_check(cookie, act_id)
+                signedin = signin_check(cookie, links)
                 if signedin:
                     logging.info(f"{name} has successfully signed in and claimed their reward.")
                 else:
@@ -408,25 +397,25 @@ def process_account(cookie: str, name: str, act_id: str) -> bool:
             end_of_month = False
             data: Dict[str,Any]= data_parser(rewards, day_count, refresh_time_formatted, end_of_month, signedin)
             card: Image.Image  = card_generator(data)
-            is_sent: bool = webhook(card, message)
+            is_sent: bool = webhook(message, card)
             if is_sent:
                 logging.info(f"Webhook sent for {name}.")
-            signin_satus = signin(cookie, act_id)
+            signin_satus = signin(cookie, links)
             if signin_satus:
                 logging.info(f"{name} has successfully signed in, now verifying...")
-                signedin = signin_check(cookie, act_id)
+                signedin = signin_check(cookie, links)
                 if signedin:
                     logging.info(f"{name} has successfully signed in and claimed their reward.")
                 else:
                     logging.warning(f"{name} has failed to sign in.")
                     message: str = f"{name} has failed to sign in, please check the logs and try again."
-                    is_sent = webhook(None, message)
+                    is_sent: bool = webhook(message=message)
                     if is_sent:
                         logging.info(f"Webhook sent for {name}.")
             else:
                 logging.warning(f"{name} has failed to sign in. The reward will not be claimed. Refresh the token and try again.")
                 message: str  = f"{name} has failed to sign in, please check the logs and try again."
-                is_sent = webhook(None, message)
+                is_sent: bool = webhook(message=message)
                 if is_sent:
                     logging.info(f"Webhook sent for {name}.")
     return True
@@ -446,19 +435,20 @@ def main() -> None:
         for game in games:
             logging.debug(f"Game: {game}")
             if game == "gi":
-                act_id = "e202009291139501"
-                logging.debug(f"Act ID: {act_id}")
-                if not process_account(cookie, name, act_id):
-                    message: str = f"Failed to process account {name}, please check the logs."
-                    is_sent: bool = webhook(None, message)
-                    if is_sent:
-                        logging.info(f"Webhook sent for {name}.")
-        if not process_account(cookie, name, games):
-            message: str = f"Failed to process account {name}, please check the logs."
-            is_sent: bool = webhook(None, message)
-            if is_sent:
-                logging.info(f"Webhook sent for {name}.")
-        time.sleep(10)
+                links = get_links("https://8fax.github.io/HoyoHelper/info/links/gi_links.txt")
+            elif game == "hsr":
+                links = get_links("https://8fax.github.io/HoyoHelper/info/links/hsr_links.txt")
+            elif game == "zzz":
+                links = get_links("https://8fax.github.io/HoyoHelper/info/links/zzz_links.txt")
+            else:
+                logging.error(f"Invalid game specified for account {name}.")
+                continue
+            if not process_account(cookie, name, links):
+                message: str = f"Failed to process account {name}, please check the logs."
+                is_sent: bool = webhook(message)
+                if is_sent:
+                    logging.info(f"Webhook sent for {name}.")
+            time.sleep(5)
 
 if __name__ == "__main__":
     main()

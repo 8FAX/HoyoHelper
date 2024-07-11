@@ -24,10 +24,21 @@ async def run(playwright: Playwright) -> list[dict[str, any]]:
     time.sleep(random.randint(1, 3))
     await page.frame_locator("#hyv-account-frame").get_by_role("button", name="Log In").click()
     time.sleep(8)
-    cookies = await context.cookies()
-    await context.close()
-    await browser.close()
-    return cookies
+
+    try:
+        await page.locator(".mhy-hoyolab-account-block__avatar-icon").wait_for_element_state("visible")
+        print("Logged in")
+        print("Waiting for cookies")
+        cookies = await context.cookies()
+        await context.close()
+        await browser.close()
+        return cookies
+
+    except AttributeError as e:
+        print("Failed to login")
+        print(e)
+        return False
+
 
 def format_cookies(cookies: list[dict[str, any]]) -> str:
     return "; ".join(f"{cookie['name']}={cookie['value']}" for cookie in cookies)

@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, simpledialog, filedialog
 from tkinter import ttk
 import sqlite3
 import hashlib
@@ -34,6 +34,17 @@ class AccountManagerApp:
 
         self.add_account_button = tk.Button(self.root, text="Add Account", command=self.add_account)
         self.add_account_button.pack(pady=5)
+
+        self.settings_button = tk.Button(self.root, text="Settings", command=self.open_settings)
+        self.settings_button.pack(pady=5)
+
+        self.add_account_button.config(text="Add Account", relief=tk.RAISED)
+        self.add_account_button.bind("<Enter>", lambda event: self.show_tooltip(event, "Add a new account"))
+        self.add_account_button.bind("<Leave>", self.hide_tooltip)
+
+        self.settings_button.config(text="Settings", relief=tk.RAISED)
+        self.settings_button.bind("<Enter>", lambda event: self.show_tooltip(event, "Open settings menu"))
+        self.settings_button.bind("<Leave>", self.hide_tooltip)
 
         self.update_account_list()
 
@@ -78,6 +89,9 @@ class AccountManagerApp:
     def add_account(self):
         AddAccountDialog(self)
 
+    def open_settings(self):
+        SettingsMenu(self)
+
     def save_account(self, account):
         salt = os.urandom(SALT_SIZE)
         password_hash = hashlib.pbkdf2_hmac('sha256', account['password'].encode(), salt, HASH_ITERATIONS)
@@ -98,6 +112,17 @@ class AccountManagerApp:
     def get_token(self, account):
         # Replace this with the real token retrieval logic
         return True
+
+    def show_tooltip(self, event, text):
+        self.tooltip = tk.Toplevel(self.root)
+        self.tooltip.wm_overrideredirect(True)
+        self.tooltip.geometry(f"+{event.x_root + 20}+{event.y_root + 10}")
+        label = tk.Label(self.tooltip, text=text, background="yellow", relief="solid", borderwidth=1)
+        label.pack()
+
+    def hide_tooltip(self, event=None):
+        if hasattr(self, 'tooltip'):
+            self.tooltip.destroy()
 
 class AddAccountDialog(simpledialog.Dialog):
     def __init__(self, app):
@@ -153,6 +178,88 @@ class AddAccountDialog(simpledialog.Dialog):
         }
         self.app.save_account(account)
 
+class SettingsMenu:
+    def __init__(self, app):
+        self.app = app
+        self.root = tk.Toplevel(app.root)
+        self.root.title("Settings")
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+        self.settings_label = tk.Label(self.main_frame, text="Settings")
+        self.settings_label.pack()
+
+        self.import_button = tk.Button(self.root, text="Import Accounts", command=self.import_accounts)
+        self.import_button.pack(pady=5)
+
+        self.export_button = tk.Button(self.root, text="Export Accounts", command=self.export_accounts)
+        self.export_button.pack(pady=5)
+
+        self.database_button = tk.Button(self.root, text="Database Path", command=self.database_path)
+        self.database_button.pack(pady=5)
+
+        self.hash_length_button = tk.Button(self.root, text="Hash Length", command=self.hash_length)
+        self.hash_length_button.pack(pady=5)
+
+        self.hash_iterations_button = tk.Button(self.root, text="Hash Iterations", command=self.hash_iterations)
+        self.hash_iterations_button.pack(pady=5)
+
+        self.rest_button = tk.Button(self.root, text="Rest Time", command=self.rest_time)
+        self.rest_button.pack(pady=5)
+
+        self.local_host_button = tk.Button(self.root, text="Local Host", command=self.local_host)
+        self.local_host_button.pack(pady=5)
+
+        self.close_button = tk.Button(self.root, text="Close", command=self.close)
+        self.close_button.pack(pady=5)
+
+    def import_accounts(self):
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            with open(file_path, 'r') as file:
+                data = file.read()
+                # Import logic here
+                messagebox.showinfo("Import Accounts", "Accounts imported successfully.")
+
+    def export_accounts(self):
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt")
+        if file_path:
+            with open(file_path, 'w') as file:
+                # Export logic here
+                file.write("account data")
+                messagebox.showinfo("Export Accounts", "Accounts exported successfully.")
+
+    def database_path(self):
+        path = filedialog.askdirectory()
+        if path:
+            messagebox.showinfo("Database Path", f"Database path set to: {path}")
+
+    def hash_length(self):
+        length = simpledialog.askinteger("Hash Length", "Enter the hash length:")
+        if length:
+            messagebox.showinfo("Hash Length", f"Hash length set to: {length}")
+
+    def hash_iterations(self):
+        iterations = simpledialog.askinteger("Hash Iterations", "Enter the number of hash iterations:")
+        if iterations:
+            messagebox.showinfo("Hash Iterations", f"Hash iterations set to: {iterations}")
+
+    def rest_time(self):
+        time = simpledialog.askinteger("Rest Time", "Enter the rest time in seconds:")
+        if time:
+            messagebox.showinfo("Rest Time", f"Rest time set to: {time}")
+
+    def local_host(self):
+        host = simpledialog.askstring("Local Host", "Enter the local host:")
+        if host:
+            messagebox.showinfo("Local Host", f"Local host set to: {host}")
+
+    def close(self):
+        self.root.destroy()
 
 if __name__ == "__main__":
     root = tk.Tk()
