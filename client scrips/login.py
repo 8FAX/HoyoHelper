@@ -80,8 +80,6 @@ def get_assets(url: str) -> Image.Image:
         return None
 
 
-
-
 def time_formater(time: str) -> str:
     input_time = int(time)
     now_time = datetime.now(timezone.utc)
@@ -217,11 +215,18 @@ def webhook(message: str, card: Image.Image = None) -> bool:
 def card_generator(data: Dict[str,str]) -> Image.Image:
     base_number: int = random.randint(1, 9)
     base: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/cards/{base_number}.png')
+    if base is None:
+        logging.error("Failed to load base card image. loading default card.")
+        base = get_assets("https://8fax.github.io/HoyoHelper/assets/gi/cards/1.png")
+        
     base = base.convert('RGB')
 
     frame: Image.Image = get_assets("https://8fax.github.io/HoyoHelper/assets/other_art/UI_Frm_AlchemySimCodexPage_Bg.png")
-    base.paste(frame, (20, 68), frame)
-    base.paste(frame, (20, 284), frame)
+    if frame is None:
+        logging.error("Failed to load frame image. The program will continue without the frame.")
+    else:
+        base.paste(frame, (20, 68), frame)
+        base.paste(frame, (20, 284), frame)
 
     icon_1: Image.Image = Image.open(BytesIO(requests.get(data['icon_1']).content))
     icon_1 = icon_1.resize((100, 100))
@@ -249,10 +254,14 @@ def card_generator(data: Dict[str,str]) -> Image.Image:
     if data['end_of_month']:
         sticker_number: int = random.randint(2, 153)
         sticker: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/character_stickers/{sticker_number}.png')
-        sticker = sticker.resize((100, 100))
-        if sticker.mode != 'RGBA':
-            sticker = sticker.convert('RGBA')
-        base.paste(sticker, (40, 304), sticker)
+        if sticker is None:
+            logging.error("Failed to load sticker image. The program will continue without the sticker.")
+        else:
+        
+            sticker = sticker.resize((100, 100))
+            if sticker.mode != 'RGBA':
+                sticker = sticker.convert('RGBA')
+            base.paste(sticker, (40, 304), sticker)
         d.text((180, 300), "No More rewards this month!", font=font_day_title, fill="Black")
         d.text((180, 340), f"You have claimed all rewards this month!\nCome back in {data['refresh']}\nto see next month's rewards!", font=font_day_title, fill="pink")
         d.text((179, 339), f"You have claimed all rewards this month!\nCome back in {data['refresh']}\nto see next month's rewards!", font=font_day_title, fill="purple")
@@ -274,9 +283,12 @@ def card_generator(data: Dict[str,str]) -> Image.Image:
 
     portrait_number: int = random.randint(2, 32)
     portrait: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/car_dec/{portrait_number}.png')
-    if portrait.mode != 'RGBA':
-        portrait = portrait.convert('RGBA')
-    base.paste(portrait, (630, 422), portrait)
+    if portrait is None:
+        logging.error("Failed to load portrait image. The program will continue without the portrait.")
+    else:
+        if portrait.mode != 'RGBA':
+            portrait = portrait.convert('RGBA')
+        base.paste(portrait, (630, 422), portrait)
 
     return base
 
