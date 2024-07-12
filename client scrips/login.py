@@ -3,7 +3,7 @@ import os
 import time
 import logging
 import random
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from io import BytesIO, BufferedReader
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
@@ -62,12 +62,19 @@ def get_links(url: str) -> Dict[str,str]:
         return None
     
 def get_assets(url: str) -> Image.Image:
-    headers: dict[str,str] = header_formater()
+    headers: dict[str, str] = header_formater()
     try:
         response = requests.get(url, headers=headers)
-        image = Image.open(BytesIO(response.content))
-        return image
-    
+        response.raise_for_status()
+        try:
+            image = Image.open(BytesIO(response.content))
+            return image
+        except UnidentifiedImageError:
+            logging.error(f"Failed to open image from assets due to unrecognized image format. link: {url}")
+            return None
+        except OSError:
+            logging.error(f"Failed to open image from assets due to an OS error. link: {url}")
+            return None
     except requests.exceptions.RequestException as e:
         logging.error(f"Request for assets failed: {e}")
         return None
