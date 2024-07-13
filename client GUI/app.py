@@ -24,7 +24,7 @@ class NotificationWidget(QtWidgets.QWidget):
         layout.addWidget(self.label)
         layout.setContentsMargins(10, 10, 10, 10)
 
-        self.setStyleSheet(f"color: {color}; text-align: center; text-decoration: none; font-weight: bold; font-family: Arial; background-color: rgba(204, 153, 255, 200); border-radius: 10px;")
+        self.setStyleSheet(f"color: {color}; text-align: center; text-decoration: none; font-weight: bold; font-family: Arial; background-color: #2c2f33;  border: 3px solid {color}; border-radius: 10px;")
 
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(NOTIFICATION_DURATION)
@@ -82,8 +82,17 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.setup_database()
         self.load_accounts()
         self.setup_ui()
+        self.load_css()
 
         self.notifications = []
+
+    def load_css(self):
+        css_file_path = os.path.join(os.path.dirname(__file__), 'styles.css')
+        if os.path.exists(css_file_path):
+            with open(css_file_path, 'r') as f:
+                self.setStyleSheet(f.read())
+        else:
+            print(f"CSS file not found at {css_file_path}")
 
     def setup_ui(self):
         layout = QtWidgets.QHBoxLayout(self)
@@ -110,6 +119,12 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.settings_page = QtWidgets.QWidget()
         self.setup_settings_ui()
         self.stacked_widget.addWidget(self.settings_page)
+
+        self.edit_account_page = QtWidgets.QWidget()
+        self.setup_edit_account_ui()
+        self.stacked_widget.addWidget(self.edit_account_page)
+
+        self.nav_list.setCurrentRow(0)  # Set Home page as the initial selected page
 
     def clear_account_inputs(self):
         self.nickname_entry.clear()
@@ -141,6 +156,10 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.password_entry.setEchoMode(QtWidgets.QLineEdit.Password)
         layout.addRow("Password:", self.password_entry)
 
+        self.toggle_password_visibility_button = QtWidgets.QPushButton("Show/Hide Password")
+        self.toggle_password_visibility_button.clicked.connect(self.toggle_password_visibility)
+        layout.addRow(self.toggle_password_visibility_button)
+
         self.games_layout = QtWidgets.QVBoxLayout()
         self.games_vars = []
         games = ["GI", "HRS", "ZZZ"]
@@ -155,21 +174,14 @@ class AccountManagerApp(QtWidgets.QWidget):
         layout.addWidget(self.save_account_button)
 
     def setup_settings_ui(self):
+        
         layout = QtWidgets.QVBoxLayout(self.settings_page)
-
-        self.import_button = QtWidgets.QPushButton("Import Accounts")
-        self.import_button.clicked.connect(self.import_accounts)
-        layout.addWidget(self.import_button)
-
-        self.export_button = QtWidgets.QPushButton("Export Accounts")
-        self.export_button.clicked.connect(self.export_accounts)
-        layout.addWidget(self.export_button)
 
         self.database_button = QtWidgets.QPushButton("Database Path")
         self.database_button.clicked.connect(self.database_path)
         layout.addWidget(self.database_button)
 
-        self.hash_length_button = QtWidgets.QPushButton("Hash Length")
+        self.hash_length_button = QtWidgets.QPushButton("Salt Length")
         self.hash_length_button.clicked.connect(self.hash_length)
         layout.addWidget(self.hash_length_button)
 
@@ -181,9 +193,102 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.rest_button.clicked.connect(self.rest_time)
         layout.addWidget(self.rest_button)
 
-        self.local_host_button = QtWidgets.QPushButton("Local Host")
-        self.local_host_button.clicked.connect(self.local_host)
-        layout.addWidget(self.local_host_button)
+    def setup_edit_account_ui(self):
+        layout = QtWidgets.QFormLayout(self.edit_account_page)
+
+        self.edit_password_verify_entry = QtWidgets.QLineEdit()
+        self.edit_password_verify_entry.setEchoMode(QtWidgets.QLineEdit.Password)
+        layout.addRow("Verify Password:", self.edit_password_verify_entry)
+
+        self.verify_password_button = QtWidgets.QPushButton("Verify")
+        self.verify_password_button.clicked.connect(self.verify_password)
+        layout.addWidget(self.verify_password_button)
+
+        self.toggle_verify_password_visibility_button = QtWidgets.QPushButton("Show/Hide Password")
+        self.toggle_verify_password_visibility_button.clicked.connect(self.toggle_verify_password_visibility)
+        layout.addRow(self.toggle_verify_password_visibility_button)
+
+        self.edit_details_widget = QtWidgets.QWidget()
+        self.edit_details_layout = QtWidgets.QFormLayout(self.edit_details_widget)
+
+        self.edit_nickname_entry = QtWidgets.QLineEdit()
+        self.edit_details_layout.addRow("Nickname:", self.edit_nickname_entry)
+
+        self.edit_username_entry = QtWidgets.QLineEdit()
+        self.edit_details_layout.addRow("Username/Email:", self.edit_username_entry)
+
+        self.edit_password_entry = QtWidgets.QLineEdit()
+        self.edit_password_entry.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.edit_details_layout.addRow("Password:", self.edit_password_entry)
+
+        self.toggle_edit_password_visibility_button = QtWidgets.QPushButton("Show/Hide Password")
+        self.toggle_edit_password_visibility_button.clicked.connect(self.toggle_edit_password_visibility)
+        self.edit_details_layout.addRow(self.toggle_edit_password_visibility_button)
+
+        self.edit_games_layout = QtWidgets.QVBoxLayout()
+        self.edit_games_vars = []
+        games = ["GI", "HRS", "ZZZ"]
+        for game in games:
+            checkbox = QtWidgets.QCheckBox(game)
+            self.edit_games_layout.addWidget(checkbox)
+            self.edit_games_vars.append(checkbox)
+        self.edit_details_layout.addRow("Games:", self.edit_games_layout)
+
+        self.save_edit_button = QtWidgets.QPushButton("Save")
+        self.save_edit_button.clicked.connect(self.save_account_info)
+        self.edit_details_layout.addWidget(self.save_edit_button)
+
+        self.delete_account_button = QtWidgets.QPushButton("Delete Account")
+        self.delete_account_button.clicked.connect(self.delete_account)
+        self.edit_details_layout.addWidget(self.delete_account_button)
+
+        layout.addWidget(self.edit_details_widget)
+
+        self.disable_edit_fields()
+        self.edit_details_widget.hide()
+
+    def verify_password(self):
+        password = self.edit_password_verify_entry.text()
+        if not password:
+            self.show_notification("Please enter the password.", "red")
+            return
+
+        password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(self.current_account['salt']), HASH_ITERATIONS).hex()
+        if password_hash == self.current_account['password_hash']:
+            self.enable_edit_fields()
+            self.load_edit_account_page(password)
+            self.edit_password_verify_entry.hide()
+            self.verify_password_button.hide()
+            self.toggle_verify_password_visibility_button.hide()
+            self.edit_details_widget.show()
+        else:
+            self.show_notification("Incorrect Password", "red")
+
+    def load_edit_account_page(self, password=""):
+        if self.current_account:
+            self.edit_nickname_entry.setText(self.current_account['nickname'])
+            self.edit_username_entry.setText(self.current_account['username'])
+            self.edit_password_entry.setText(password)
+            for checkbox in self.edit_games_vars:
+                checkbox.setChecked(checkbox.text() in self.current_account['games'])
+
+    def disable_edit_fields(self):
+        self.edit_nickname_entry.setEnabled(False)
+        self.edit_username_entry.setEnabled(False)
+        self.edit_password_entry.setEnabled(False)
+        self.save_edit_button.setEnabled(False)
+        self.delete_account_button.setEnabled(False)
+        for checkbox in self.edit_games_vars:
+            checkbox.setEnabled(False)
+
+    def enable_edit_fields(self):
+        self.edit_nickname_entry.setEnabled(True)
+        self.edit_username_entry.setEnabled(True)
+        self.edit_password_entry.setEnabled(True)
+        self.save_edit_button.setEnabled(True)
+        self.delete_account_button.setEnabled(True)
+        for checkbox in self.edit_games_vars:
+            checkbox.setEnabled(True)
 
     def display_page(self, index):
         self.stacked_widget.setCurrentIndex(index)
@@ -235,7 +340,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         games = [checkbox.text() for checkbox in self.games_vars if checkbox.isChecked()]
 
         if not nickname or not username or not password or not games:
-            QtWidgets.QMessageBox.warning(self, "Incomplete Data", "Please fill out all fields and select at least one game.")
+            self.show_notification("Please fill out all fields and select at least one game.", "red")
             return
 
         salt = os.urandom(SALT_SIZE)
@@ -252,22 +357,6 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.display_page(0)
         self.clear_account_inputs()
         self.show_notification("Account saved successfully!", "green")
-
-    def import_accounts(self):
-        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Import Accounts", "", "Text Files (*.txt);;All Files (*)")
-        if file_path:
-            with open(file_path, 'r') as file:
-                data = file.read()
-                # Import logic here
-                self.show_notification("Accounts imported successfully!", "green")
-
-    def export_accounts(self):
-        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Export Accounts", "", "Text Files (*.txt);;All Files (*)")
-        if file_path:
-            with open(file_path, 'w') as file:
-                # Export logic here
-                file.write("account data")
-                self.show_notification("Accounts exported successfully!", "green")
 
     def database_path(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self, "Database Path")
@@ -289,18 +378,13 @@ class AccountManagerApp(QtWidgets.QWidget):
         if ok:
             self.show_notification(f"Rest time set to: {time}", "green")
 
-    def local_host(self):
-        host, ok = QtWidgets.QInputDialog.getText(self, "Local Host", "Enter the local host:")
-        if ok:
-            self.show_notification(f"Local host set to: {host}", "green")
-
     def show_context_menu(self, position):
         selected_items = self.account_listbox.selectedItems()
         if not selected_items:
             return
 
-        selected_account = selected_items[0]
-        self.current_account = next((account for account in self.accounts if account['nickname'] in selected_account.text()), None)
+        selected_account = selected_items[0].text().split(" (")[0]
+        self.current_account = next((account for account in self.accounts if account['nickname'] == selected_account), None)
 
         if not self.current_account:
             return
@@ -310,14 +394,12 @@ class AccountManagerApp(QtWidgets.QWidget):
         run_action = menu.addAction("Run this account")
         token_action = menu.addAction("Get new token")
         group_action = menu.addAction("Add to group")
-        edit_action = menu.addAction("Edit info")
-        delete_action = menu.addAction("Delete")
+        edit_action = menu.addAction("Edit/Remove account")
 
         run_action.triggered.connect(self.run_account)
         token_action.triggered.connect(self.get_new_token)
         group_action.triggered.connect(self.add_to_group)
-        edit_action.triggered.connect(self.edit_account_info)
-        delete_action.triggered.connect(self.delete_account)
+        edit_action.triggered.connect(self.navigate_to_edit_account_page)
 
         menu.exec_(self.account_listbox.viewport().mapToGlobal(position))
 
@@ -330,28 +412,47 @@ class AccountManagerApp(QtWidgets.QWidget):
     def add_to_group(self):
         pass
 
-    def edit_account_info(self):
-        password, ok = QtWidgets.QInputDialog.getText(self, "Password Required", "Enter the account password:", QtWidgets.QLineEdit.Password)
-        if ok and self.verify_password(password, self.current_account['password_hash'], self.current_account['salt']):
-            dialog = EditAccountDialog(self.current_account, self)
-            if dialog.exec_():
-                self.load_accounts()
-                self.update_account_list()
+    def navigate_to_edit_account_page(self):
+        self.stacked_widget.setCurrentIndex(3)  # Navigate to Edit Account Page
+
+    def save_account_info(self):
+        nickname = self.edit_nickname_entry.text()
+        username = self.edit_username_entry.text()
+        password = self.edit_password_entry.text()
+        games = [checkbox.text() for checkbox in self.edit_games_vars if checkbox.isChecked()]
+
+        if not nickname or not username or (password and not games):
+            self.show_notification("Please fill out all fields and select at least one game.", "red")
+            return
+
+        if password:
+            salt = os.urandom(SALT_SIZE)
+            password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, HASH_ITERATIONS).hex()
+        else:
+            password_hash = self.current_account['password_hash']
+            salt = bytes.fromhex(self.current_account['salt'])
+
+        self.cursor.execute('''
+            UPDATE accounts
+            SET nickname=?, username=?, password_hash=?, salt=?, games=?
+            WHERE id=?
+        ''', (nickname, username, password_hash, salt.hex(), ','.join(games), self.current_account['id']))
+        self.conn.commit()
+
+        self.load_accounts()
+        self.update_account_list()
+        self.show_notification("Account updated successfully!", "green")
+        self.display_page(0)
 
     def delete_account(self):
-        password, ok = QtWidgets.QInputDialog.getText(self, "Password Required", "Enter the account password:", QtWidgets.QLineEdit.Password)
-        if ok and self.verify_password(password, self.current_account['password_hash'], self.current_account['salt']):
-            reply = QtWidgets.QMessageBox.question(self, 'Delete Account', "Are you sure you want to delete this account?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
-            if reply == QtWidgets.QMessageBox.Yes:
-                self.cursor.execute("DELETE FROM accounts WHERE id=?", (self.current_account['id'],))
-                self.conn.commit()
-                self.load_accounts()
-                self.update_account_list()
-                self.show_notification("Account deleted successfully!", "red")
-
-    def verify_password(self, password, password_hash, salt):
-        hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(salt), HASH_ITERATIONS).hex()
-        return hashed_password == password_hash
+        reply = QtWidgets.QMessageBox.question(self, 'Delete Account', "Are you sure you want to delete this account?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
+        if reply == QtWidgets.QMessageBox.Yes:
+            self.cursor.execute("DELETE FROM accounts WHERE id=?", (self.current_account['id'],))
+            self.conn.commit()
+            self.load_accounts()
+            self.update_account_list()
+            self.show_notification("Account deleted successfully!", "red")
+            self.display_page(0)
 
     def show_notification(self, message, color):
         notification = NotificationWidget(message, self, color)
@@ -371,66 +472,23 @@ class AccountManagerApp(QtWidgets.QWidget):
                 y = parent_geometry.y() + parent_geometry.height() - (notification.height() + NOTIFICATION_SPACING) * (i + 1) - 40
                 notification.move(x, y)
 
-class EditAccountDialog(QtWidgets.QDialog):
-    def __init__(self, account, parent=None):
-        super().__init__(parent)
-        self.account = account
-        self.setWindowTitle("Edit Account Info")
-        self.setup_ui()
-
-    def setup_ui(self):
-        layout = QtWidgets.QFormLayout(self)
-
-        self.nickname_entry = QtWidgets.QLineEdit(self.account['nickname'])
-        layout.addRow("Nickname:", self.nickname_entry)
-
-        self.username_entry = QtWidgets.QLineEdit(self.account['username'])
-        layout.addRow("Username/Email:", self.username_entry)
-
-        self.password_entry = QtWidgets.QLineEdit()
-        self.password_entry.setEchoMode(QtWidgets.QLineEdit.Password)
-        layout.addRow("Password:", self.password_entry)
-
-        self.games_layout = QtWidgets.QVBoxLayout()
-        self.games_vars = []
-        games = ["GI", "HRS", "ZZZ"]
-        for game in games:
-            checkbox = QtWidgets.QCheckBox(game)
-            checkbox.setChecked(game in self.account['games'])
-            self.games_layout.addWidget(checkbox)
-            self.games_vars.append(checkbox)
-        layout.addRow("Games:", self.games_layout)
-
-        self.save_button = QtWidgets.QPushButton("Save")
-        self.save_button.clicked.connect(self.save_account_info)
-        layout.addWidget(self.save_button)
-
-    def save_account_info(self):
-        nickname = self.nickname_entry.text()
-        username = self.username_entry.text()
-        password = self.password_entry.text()
-        games = [checkbox.text() for checkbox in self.games_vars if checkbox.isChecked()]
-
-        if not nickname or not username or (password and not games):
-            QtWidgets.QMessageBox.warning(self, "Incomplete Data", "Please fill out all fields and select at least one game.")
-            return
-
-        if password:
-            salt = os.urandom(SALT_SIZE)
-            password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, HASH_ITERATIONS).hex()
+    def toggle_password_visibility(self):
+        if self.password_entry.echoMode() == QtWidgets.QLineEdit.Password:
+            self.password_entry.setEchoMode(QtWidgets.QLineEdit.Normal)
         else:
-            password_hash = self.account['password_hash']
-            salt = bytes.fromhex(self.account['salt'])
+            self.password_entry.setEchoMode(QtWidgets.QLineEdit.Password)
 
-        parent = self.parentWidget()
-        parent.cursor.execute('''
-            UPDATE accounts
-            SET nickname=?, username=?, password_hash=?, salt=?, games=?
-            WHERE id=?
-        ''', (nickname, username, password_hash, salt.hex(), ','.join(games), self.account['id']))
-        parent.conn.commit()
+    def toggle_verify_password_visibility(self):
+        if self.edit_password_verify_entry.echoMode() == QtWidgets.QLineEdit.Password:
+            self.edit_password_verify_entry.setEchoMode(QtWidgets.QLineEdit.Normal)
+        else:
+            self.edit_password_verify_entry.setEchoMode(QtWidgets.QLineEdit.Password)
 
-        self.accept()
+    def toggle_edit_password_visibility(self):
+        if self.edit_password_entry.echoMode() == QtWidgets.QLineEdit.Password:
+            self.edit_password_entry.setEchoMode(QtWidgets.QLineEdit.Normal)
+        else:
+            self.edit_password_entry.setEchoMode(QtWidgets.QLineEdit.Password)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

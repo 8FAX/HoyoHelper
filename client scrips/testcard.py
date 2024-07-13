@@ -27,6 +27,20 @@ data2 = {
 }
 
 def create_card(data: dict) -> Image.Image: 
+    """
+    The `create_card` function generates a card image with various elements such as icons, text, and
+    portraits based on input data.
+    
+    Author - Liam Scott
+    Last update - 07/12/2024
+    @param data (dict) - The `data` parameter in the `create_card` function seems to be a dictionary
+    containing various information needed to create a card. Here is a breakdown of the key-value pairs
+    in the `data` dictionary:
+    @returns The `create_card` function returns an image with various elements such as icons, text, and
+    portraits pasted onto a base card template. The final image represents a card with information about
+    rewards, days checked in, and potential future rewards.
+    
+    """
     base_number = random.randint(1, 9)
     base = Image.open(f'assets/cards/{base_number}.png')
     base = base.convert('RGB')
@@ -95,6 +109,16 @@ def create_card(data: dict) -> Image.Image:
 
 
 def send_card(data: dict):
+    """
+    The function `send_card` sends a card image to a Discord webhook along with a message indicating
+    that a user has signed in.
+    
+    Author - Liam Scott
+    Last update - 07/12/2024
+    @param data (dict) - The `send_card` function takes a dictionary `data` as input, which is used to
+    create a card with information. The function then sends this card as a message to a Discord webhook.
+    
+    """
     photo = create_card(data)
     name = "Test"
 
@@ -105,6 +129,9 @@ def send_card(data: dict):
     files = {'file': open('Card.png', 'rb')}
     requests.post(discord_webhook, data, files=files)
 
+# The `if __name__ == "__main__":` block in Python is used to check whether the current script is
+# being run directly by the Python interpreter or if it is being imported as a module into another
+# script.
 if __name__ == "__main__":
     send_card(data2)
     
