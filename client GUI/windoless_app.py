@@ -1,3 +1,30 @@
+# -------------------------------------------------------------------------------------
+# HoYo Helper - a hoyolab helper tool
+# Made with ♥ by 8FA (Uilliam.com)
+
+# Copyright (C) 2024 copyright.Uilliam.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see https://github.com/8FAX/HoyoHelper/blob/main/LICENSE.md.
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# do not remove this notice
+
+# This file is part of [HoYo Helper].
+#version 0.5.0
+# -------------------------------------------------------------------------------------
+
+
+
 import sys
 import sqlite3
 import hashlib
@@ -78,7 +105,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("Account Manager")
         self.resize(800, 600)
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint| QtCore.Qt.X11BypassWindowManagerHint| QtCore.Qt.WindowStaysOnTopHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
         self.setup_database()
@@ -91,7 +118,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self._start_pos = None
         self._is_resizing = False
         self._resize_direction = None
-        self._margin = 10  # Margin for resizing
+        self._margin = 10 
 
     def load_css(self):
         css_file_path = os.path.join(os.path.dirname(__file__), 'styles.css')
@@ -136,7 +163,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.setup_edit_account_ui()
         self.stacked_widget.addWidget(self.edit_account_page)
 
-        self.nav_list.setCurrentRow(0)  # Set Home page as the initial selected page
+        self.nav_list.setCurrentRow(0)  #
 
     def create_title_bar(self):
         title_bar = QtWidgets.QWidget()
@@ -203,11 +230,14 @@ class AccountManagerApp(QtWidgets.QWidget):
                     self._is_resizing = True
                 else:
                     self.move(self._old_pos + delta)
+        else:
+            self.setCursor(self.get_cursor_shape(event.pos()))
 
     def mouseReleaseEvent(self, event):
         self._start_pos = None
         self._is_resizing = False
         self._resize_direction = None
+        self.setCursor(QtCore.Qt.ArrowCursor)
 
     def get_resize_direction(self, pos):
         if pos.x() < self._margin and pos.y() < self._margin:
@@ -245,6 +275,18 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.setGeometry(QtCore.QRect(QtCore.QPoint(self.geometry().left(), pos.y()), self.geometry().bottomRight()))
         elif self._resize_direction == 'bottom':
             self.setGeometry(QtCore.QRect(self.geometry().topLeft(), QtCore.QPoint(self.geometry().right(), pos.y())))
+
+    def get_cursor_shape(self, pos):
+        direction = self.get_resize_direction(pos)
+        if direction in ['top_left', 'bottom_right']:
+            return QtCore.Qt.SizeFDiagCursor
+        elif direction in ['top_right', 'bottom_left']:
+            return QtCore.Qt.SizeBDiagCursor
+        elif direction in ['left', 'right']:
+            return QtCore.Qt.SizeHorCursor
+        elif direction in ['top', 'bottom']:
+            return QtCore.Qt.SizeVerCursor
+        return QtCore.Qt.ArrowCursor
 
     def clear_account_inputs(self):
         self.nickname_entry.clear()
