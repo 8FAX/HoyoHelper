@@ -78,6 +78,8 @@ class AccountManagerApp(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("Account Manager")
         self.resize(800, 600)
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
         self.setup_database()
         self.load_accounts()
@@ -85,6 +87,11 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.load_css()
 
         self.notifications = []
+
+        self._start_pos = None
+        self._is_resizing = False
+        self._resize_direction = None
+        self._margin = 10  # Margin for resizing
 
     def load_css(self):
         css_file_path = os.path.join(os.path.dirname(__file__), 'styles.css')
@@ -95,7 +102,12 @@ class AccountManagerApp(QtWidgets.QWidget):
             print(f"CSS file not found at {css_file_path}")
 
     def setup_ui(self):
-        layout = QtWidgets.QHBoxLayout(self)
+        main_layout = QtWidgets.QVBoxLayout(self)
+        self.title_bar = self.create_title_bar()
+        main_layout.addWidget(self.title_bar)
+
+        central_layout = QtWidgets.QHBoxLayout()
+        main_layout.addLayout(central_layout)
 
         self.nav_list = QtWidgets.QListWidget()
         self.nav_list.setFixedWidth(150)
@@ -103,10 +115,10 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.nav_list.addItem("Add Account")
         self.nav_list.addItem("Settings")
         self.nav_list.currentRowChanged.connect(self.display_page)
-        layout.addWidget(self.nav_list)
+        central_layout.addWidget(self.nav_list)
 
         self.stacked_widget = QtWidgets.QStackedWidget()
-        layout.addWidget(self.stacked_widget)
+        central_layout.addWidget(self.stacked_widget)
 
         self.home_page = QtWidgets.QWidget()
         self.setup_home_ui()
@@ -125,6 +137,114 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.stacked_widget.addWidget(self.edit_account_page)
 
         self.nav_list.setCurrentRow(0)  # Set Home page as the initial selected page
+
+    def create_title_bar(self):
+        title_bar = QtWidgets.QWidget()
+        title_bar.setFixedHeight(40)
+        title_bar.setStyleSheet("background-color: #2c2f33;")
+
+        title_layout = QtWidgets.QHBoxLayout(title_bar)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+
+        title_label = QtWidgets.QLabel("Account Manager")
+        title_label.setStyleSheet("color: white; font-size: 16px; margin-left: 10px;")
+        title_layout.addWidget(title_label)
+
+        title_layout.addStretch()
+
+        minimize_button = self.create_title_button("—")
+        minimize_button.clicked.connect(self.showMinimized)
+        title_layout.addWidget(minimize_button)
+
+        maximize_button = self.create_title_button("⬜")
+        maximize_button.clicked.connect(self.toggle_maximize)
+        title_layout.addWidget(maximize_button)
+
+        close_button = self.create_title_button("✖")
+        close_button.clicked.connect(self.close)
+        title_layout.addWidget(close_button)
+
+        title_bar.mousePressEvent = self.mousePressEvent
+        title_bar.mouseMoveEvent = self.mouseMoveEvent
+
+        self.is_maximized = False
+        self.start_pos = None
+
+        return title_bar
+
+    def create_title_button(self, text):
+        button = QtWidgets.QPushButton(text)
+        button.setFixedSize(40, 40)
+        button.setStyleSheet("QPushButton { background-color: #2c2f33; color: white; border: none; } QPushButton:hover { background-color: #40444b; }")
+        return button
+
+    def toggle_maximize(self):
+        if self.is_maximized:
+            self.showNormal()
+            self.is_maximized = False
+        else:
+            self.showMaximized()
+            self.is_maximized = True
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self._start_pos = event.globalPos()
+            self._old_pos = self.pos()
+            if not self._is_resizing:
+                self._resize_direction = self.get_resize_direction(event.pos())
+
+    def mouseMoveEvent(self, event):
+        if self._start_pos:
+            delta = event.globalPos() - self._start_pos
+            if self._is_resizing:
+                self.resize_window(event.globalPos())
+            else:
+                if self._resize_direction:
+                    self._is_resizing = True
+                else:
+                    self.move(self._old_pos + delta)
+
+    def mouseReleaseEvent(self, event):
+        self._start_pos = None
+        self._is_resizing = False
+        self._resize_direction = None
+
+    def get_resize_direction(self, pos):
+        if pos.x() < self._margin and pos.y() < self._margin:
+            return 'top_left'
+        elif pos.x() < self._margin and pos.y() > self.height() - self._margin:
+            return 'bottom_left'
+        elif pos.x() > self.width() - self._margin and pos.y() < self._margin:
+            return 'top_right'
+        elif pos.x() > self.width() - self._margin and pos.y() > self.height() - self._margin:
+            return 'bottom_right'
+        elif pos.x() < self._margin:
+            return 'left'
+        elif pos.x() > self.width() - self._margin:
+            return 'right'
+        elif pos.y() < self._margin:
+            return 'top'
+        elif pos.y() > self.height() - self._margin:
+            return 'bottom'
+        return None
+
+    def resize_window(self, pos):
+        if self._resize_direction == 'top_left':
+            self.setGeometry(QtCore.QRect(pos, self.geometry().bottomRight()))
+        elif self._resize_direction == 'bottom_left':
+            self.setGeometry(QtCore.QRect(QtCore.QPoint(pos.x(), self.geometry().top()), QtCore.QPoint(self.geometry().right(), pos.y())))
+        elif self._resize_direction == 'top_right':
+            self.setGeometry(QtCore.QRect(QtCore.QPoint(self.geometry().left(), pos.y()), QtCore.QPoint(pos.x(), self.geometry().bottom())))
+        elif self._resize_direction == 'bottom_right':
+            self.setGeometry(QtCore.QRect(self.geometry().topLeft(), pos))
+        elif self._resize_direction == 'left':
+            self.setGeometry(QtCore.QRect(QtCore.QPoint(pos.x(), self.geometry().top()), self.geometry().bottomRight()))
+        elif self._resize_direction == 'right':
+            self.setGeometry(QtCore.QRect(self.geometry().topLeft(), QtCore.QPoint(pos.x(), self.geometry().bottom())))
+        elif self._resize_direction == 'top':
+            self.setGeometry(QtCore.QRect(QtCore.QPoint(self.geometry().left(), pos.y()), self.geometry().bottomRight()))
+        elif self._resize_direction == 'bottom':
+            self.setGeometry(QtCore.QRect(self.geometry().topLeft(), QtCore.QPoint(self.geometry().right(), pos.y())))
 
     def clear_account_inputs(self):
         self.nickname_entry.clear()
