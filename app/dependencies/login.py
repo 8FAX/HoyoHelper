@@ -19,8 +19,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # do not remove this notice
 
-# This file is part of [HoYo Helper].
-#version 0.5.0
+# This file is part of HoYo Helper.
+#version 0.7.1
 # -------------------------------------------------------------------------------------
 
 
@@ -32,7 +32,7 @@ import logging
 import random
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from io import BytesIO, BufferedReader
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta 
 from dotenv import load_dotenv
 from typing import Tuple, List, Any, Dict
 import json
@@ -227,7 +227,7 @@ def webhook(message: str, card: Image.Image = None) -> bool:
             logging.error(f"Failed to send webhook notification: {e}")
             return False
     else:
-        buffer = BytesIO()
+        buffer: BufferedReader = BytesIO()
         card.save(buffer, format="PNG" )
         buffer.seek(0)
         files: Dict[str, tuple] = {'file': ('Card.png', buffer, 'image/png')}
@@ -466,6 +466,35 @@ def process_account(cookie: str, name: str, links: str) -> bool:
                     logging.info(f"Webhook sent for {name}.")
     return True
 
+def run_account(cookie: str, name: str, games: list[str]) -> bool:
+
+    if not cookie or not name or not games:
+        logging.error(f"Missing environment variables for account {name}.")
+        return False
+    
+    logging.info(f"Processing account {name}")
+    logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {games}")
+
+    for game in games:
+        logging.debug(f"Game: {game}")
+        if game == "gi":
+            links = get_links("https://8fax.github.io/HoyoHelper/info/links/gi_links.txt")
+        elif game == "hsr":
+            links = get_links("https://8fax.github.io/HoyoHelper/info/links/hsr_links.txt")
+        elif game == "zzz":
+            links = get_links("https://8fax.github.io/HoyoHelper/info/links/zzz_links.txt")
+        else:
+            logging.error(f"Invalid game specified for account {name}.")
+            continue
+        if not process_account(cookie, name, links):
+            message: str = f"Failed to process account {name}, please check the logs."
+            is_sent: bool = webhook(message)
+            if is_sent:
+                logging.info(f"Webhook sent for {name}.")
+            False
+        time.sleep(5)
+    return True
+
 def main() -> None:
     if not load_env():
         raise SystemError("Failed to load environment variables.")
@@ -495,6 +524,7 @@ def main() -> None:
                 if is_sent:
                     logging.info(f"Webhook sent for {name}.")
             time.sleep(5)
+
 
 if __name__ == "__main__":
     main()

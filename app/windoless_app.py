@@ -19,10 +19,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # do not remove this notice
 
-# This file is part of [HoYo Helper].
-#version 0.5.0
+# This file is part of HoYo Helper.
+#version 0.6.4
 # -------------------------------------------------------------------------------------
-
 
 
 import sys
@@ -105,7 +104,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("Account Manager")
         self.resize(800, 600)
-        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint| QtCore.Qt.X11BypassWindowManagerHint| QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.X11BypassWindowManagerHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
         self.setup_database()
@@ -301,6 +300,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.account_listbox = QtWidgets.QListWidget()
         self.account_listbox.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.account_listbox.customContextMenuRequested.connect(self.show_context_menu)
+        self.account_listbox.itemClicked.connect(self.show_context_menu)
         layout.addWidget(self.account_listbox)
 
         self.update_account_list()
@@ -419,6 +419,7 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.enable_edit_fields()
             self.load_edit_account_page(password)
             self.edit_password_verify_entry.hide()
+            self.edit_password_verify_entry.clear()
             self.verify_password_button.hide()
             self.toggle_verify_password_visibility_button.hide()
             self.edit_details_widget.show()
@@ -539,12 +540,14 @@ class AccountManagerApp(QtWidgets.QWidget):
         if ok:
             self.show_notification(f"Rest time set to: {time}", "green")
 
-    def show_context_menu(self, position):
-        selected_items = self.account_listbox.selectedItems()
-        if not selected_items:
+    def show_context_menu(self, item):
+        if not item:
             return
-
-        selected_account = selected_items[0].text().split(" (")[0]
+        try:
+            selected_account = item.text().split(" (")[0]
+        except AttributeError:
+            return
+        
         self.current_account = next((account for account in self.accounts if account['nickname'] == selected_account), None)
 
         if not self.current_account:
@@ -562,7 +565,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         group_action.triggered.connect(self.add_to_group)
         edit_action.triggered.connect(self.navigate_to_edit_account_page)
 
-        menu.exec_(self.account_listbox.viewport().mapToGlobal(position))
+        menu.exec_(self.account_listbox.viewport().mapToGlobal(self.account_listbox.visualItemRect(item).bottomLeft()))
 
     def run_account(self):
         pass
@@ -574,7 +577,8 @@ class AccountManagerApp(QtWidgets.QWidget):
         pass
 
     def navigate_to_edit_account_page(self):
-        self.stacked_widget.setCurrentIndex(3)  # Navigate to Edit Account Page
+        self.stacked_widget.setCurrentIndex(3)  
+        self.reset_edit_account_page()
 
     def save_account_info(self):
         nickname = self.edit_nickname_entry.text()
@@ -650,6 +654,18 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.edit_password_entry.setEchoMode(QtWidgets.QLineEdit.Normal)
         else:
             self.edit_password_entry.setEchoMode(QtWidgets.QLineEdit.Password)
+
+    def reset_edit_account_page(self):
+        self.edit_nickname_entry.clear()
+        self.edit_username_entry.clear()
+        self.edit_password_entry.clear()
+        for checkbox in self.edit_games_vars:
+            checkbox.setChecked(False)
+        self.edit_password_verify_entry.show()
+        self.verify_password_button.show()
+        self.toggle_verify_password_visibility_button.show()
+        self.edit_details_widget.hide()
+        self.disable_edit_fields()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

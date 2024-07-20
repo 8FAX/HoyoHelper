@@ -19,11 +19,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # do not remove this notice
 
-# This file is part of [HoYo Helper].
-#version 0.5.0
+# This file is part of HoYo Helper.
+#version 0.1.2
 # -------------------------------------------------------------------------------------
-
-
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -32,7 +30,7 @@ NOTIFICATION_DURATION = 3000  # Duration in milliseconds
 class NotificationWidget(QtWidgets.QWidget):
     def __init__(self, message, parent=None, color="red"):
         super().__init__(parent)
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.Popup | QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.Tool | QtCore.Qt.X11BypassWindowManagerHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
         layout = QtWidgets.QVBoxLayout(self)
