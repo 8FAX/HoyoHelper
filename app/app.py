@@ -1,48 +1,33 @@
-# -------------------------------------------------------------------------------------
-# HoYo Helper - a hoyolab helper tool
-# Made with ♥ by 8FA (Uilliam.com)
-
-# Copyright (C) 2024 copyright.Uilliam.com
-
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Affero General Public License for more details.
-
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see https://github.com/8FAX/HoyoHelper/blob/main/LICENSE.md.
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# do not remove this notice
-
-# This file is part of HoYo Helper.
-#version 0.5.1
-# -------------------------------------------------------------------------------------
-
-
 import sys
-import sqlite3
-import hashlib
 import os
 import asyncio
 from PyQt5 import QtWidgets, QtCore, QtGui
-
 from dependencies.login import run_account
-from dependencies.pips import get_token, format_cookies
+from dependencies.pips import get_cookie, format_cookies
 from dependencies.encrypt import encrypt, decrypt
+from dependencies.database import setup_database, load_accounts, save_account, update_account, delete_account
 
-
-
-DB_NAME = "accounts.db"
 SALT_SIZE = 16
 HASH_ITERATIONS = 100000
 NOTIFICATION_DURATION = 3000  # Duration in milliseconds
 NOTIFICATION_SPACING = 10     # Spacing between notifications
 ENCRIPTION_KEY = "123"
+
+class CookieThread(QtCore.QThread):
+    result = QtCore.pyqtSignal(object)
+
+    def __init__(self, username, password, parent=None):
+        super().__init__(parent)
+        self.username = username
+        self.password = password
+
+    def run(self):
+        cookies: list[dict[str, any]] = asyncio.run(get_cookie(self.password, self.username))
+        if cookies:
+            cookies = format_cookies(cookies) 
+            self.result.emit(cookies)
+        else:
+            self.result.emit(False)
 
 class NotificationWidget(QtWidgets.QWidget):
     def __init__(self, message, parent=None, color="red"):
@@ -115,8 +100,8 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.X11BypassWindowManagerHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
-        self.setup_database()
-        self.load_accounts()
+        setup_database()
+        self.accounts = load_accounts()
         self.setup_ui()
         self.load_css()
 
@@ -472,40 +457,6 @@ class AccountManagerApp(QtWidgets.QWidget):
     def display_page(self, index):
         self.stacked_widget.setCurrentIndex(index)
 
-    def setup_database(self):
-        self.conn = sqlite3.connect(DB_NAME)
-        self.cursor = self.conn.cursor()
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS accounts (
-                id INTEGER PRIMARY KEY,
-                nickname TEXT NOT NULL,
-                username TEXT NOT NULL,
-                encrypted_password TEXT NOT NULL,
-                games TEXT NOT NULL,
-                webhook TEXT,
-                token TEXT,
-                passing TEXT
-            )
-        ''')
-        self.conn.commit()
-
-    def load_accounts(self):
-        self.accounts = []
-        self.cursor.execute("SELECT * FROM accounts")
-        rows = self.cursor.fetchall()
-        for row in rows:
-            account = {
-                "id": row[0],
-                "nickname": row[1],
-                "username": row[2],
-                "encrypted_password": row[3],
-                "games": row[4].split(','),
-                "token": row[5],
-                "passing": row[6],
-                "webhook": row[7]
-            }
-            self.accounts.append(account)
-
     def update_account_list(self):
         self.account_listbox.clear()
         for account in self.accounts:
@@ -520,26 +471,38 @@ class AccountManagerApp(QtWidgets.QWidget):
         games = [checkbox.text() for checkbox in self.games_vars if checkbox.isChecked()]
 
         if not nickname or not username or not password or not games or not webhook:
-            print(nickname, username, password, games, webhook)
             self.show_notification("Please fill out all fields and select at least one game.", "red")
             return
 
-        password_ciphertext = encrypt(ENCRIPTION_KEY, password)
-
-        self.cursor.execute('''
-            INSERT INTO accounts (nickname, username, encrypted_password, games, token, passing, webhook)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (nickname, username, password_ciphertext, ','.join(games), "", "", webhook))
-        self.conn.commit()
-
-        self.load_accounts()
-        self.update_account_list()
+        self.show_notification("Attempting to get the cookie...", "green")
         self.display_page(0)
+
+        self.cookie_thread = CookieThread(username, password)
+        self.cookie_thread.result.connect(self.handle_cookie_result)
+        self.cookie_thread.start()
+
+    def handle_cookie_result(self, cookies):
+        if cookies:
+            cookie = format_cookies(cookies)
+            passing = True
+        else:
+            self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
+            passing = False
+
+        nickname = self.nickname_entry.text()
+        username = self.username_entry.text()
+        password = self.password_entry.text()
+        webhook = self.webhook_entry.text()
+        games = [checkbox.text() for checkbox in self.games_vars if checkbox.isChecked()]
+
+        password_ciphertext = encrypt(ENCRIPTION_KEY, password)
+        save_account(nickname, username, password_ciphertext, games, webhook, cookie, passing)
+
+        self.accounts = load_accounts()
+        self.update_account_list()
         self.clear_account_inputs()
         self.show_notification("Account saved successfully!", "green")
-        self.show_notification("Attempting to get the token...", "green")
     
-        asyncio.run(get_token(self.accounts[-1], self.conn, self.cursor))
         
     def database_path(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self, "Database Path")
@@ -577,12 +540,12 @@ class AccountManagerApp(QtWidgets.QWidget):
         menu = QtWidgets.QMenu()
 
         run_action = menu.addAction("Run this account")
-        token_action = menu.addAction("Get new token")
+        cookie_action = menu.addAction("Get new cookie")
         group_action = menu.addAction("Add to group")
         edit_action = menu.addAction("Edit/Remove account")
 
         run_action.triggered.connect(self.run_account)
-        token_action.triggered.connect(self.get_new_token)
+        cookie_action.triggered.connect(self.get_new_cookie)
         group_action.triggered.connect(self.add_to_group)
         edit_action.triggered.connect(self.navigate_to_edit_account_page)
 
@@ -591,11 +554,32 @@ class AccountManagerApp(QtWidgets.QWidget):
     def run_account(self):
         pass
 
-    def get_new_token(self):
-        pass
+    def get_new_cookie(self):
+        if not self.current_account:
+            self.show_notification("No account selected.", "red")
+            return
+
+        self.show_notification("Attempting to get a new cookie...", "green")
+
+        self.cookie_thread = CookieThread(self.current_account['username'], decrypt(ENCRIPTION_KEY, self.current_account['encrypted_password']))
+        self.cookie_thread.result.connect(self.handle_new_cookie_result)
+        self.cookie_thread.start()
 
     def add_to_group(self):
         pass
+
+    def handle_new_cookie_result(self, cookies):
+        if cookies:
+            cookie = format_cookies(cookies)
+            self.current_account['cookie'] = cookie
+            update_account(self.current_account['id'], self.current_account['nickname'], self.current_account['username'],
+                           self.current_account['encrypted_password'], self.current_account['games'], self.current_account['webhook'], cookie, True)
+            self.show_notification("New cookie obtained successfully!", "green")
+        else:
+            self.show_notification("Failed to get the new cookie. Please check the username and password.", "red")
+
+        self.accounts = load_accounts()
+        self.update_account_list()
 
     def navigate_to_edit_account_page(self):
         self.stacked_widget.setCurrentIndex(3)  
@@ -608,34 +592,53 @@ class AccountManagerApp(QtWidgets.QWidget):
         webhook = self.edit_webhook_entry.text()
         games = [checkbox.text() for checkbox in self.edit_games_vars if checkbox.isChecked()]
 
-        if not nickname or not username or not webhook or (password and not games):
+        if not nickname or not username or not password or not games or not webhook:
             self.show_notification("Please fill out all fields and select at least one game.", "red")
             return
+
+        self.show_notification("Attempting to get the cookie...", "green")
+
+        self.cookie_thread = CookieThread(username, password)
+        self.cookie_thread.result.connect(self.handle_edit_cookie_result)
+        self.cookie_thread.start()
+        self.display_page(0)
+
+        
+
+        self.accounts = load_accounts()
+        self.update_account_list()
+        self.show_notification("Account updated successfully!", "green")
+    
+    def handle_edit_cookie_result(self, cookies):
+        nickname = self.edit_nickname_entry.text()
+        username = self.edit_username_entry.text()
+        password = self.edit_password_entry.text()
+        webhook = self.edit_webhook_entry.text()
+        games = [checkbox.text() for checkbox in self.edit_games_vars if checkbox.isChecked()]
+
+        if cookies:
+            cookie = format_cookies(cookies)
+            passing = True
+        else:
+            self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
+            passing = False
 
         if password:
             encrypted_password = encrypt(ENCRIPTION_KEY, password)
         else:
             encrypted_password = self.current_account['encrypted_password']
 
-        self.cursor.execute('''
-            UPDATE accounts
-            SET nickname=?, username=?, encrypted_password=?, games=?, webhook=?
-            WHERE id=?
-        ''', (nickname, username, encrypted_password, ','.join(games), webhook, self.current_account['id']))
-        self.conn.commit()
+        update_account(self.current_account['id'], nickname, username, encrypted_password, games, webhook, cookie, passing)
 
-        self.load_accounts()
+        self.accounts = load_accounts()
         self.update_account_list()
         self.show_notification("Account updated successfully!", "green")
-        self.show_notification("Attempting to get the token...", "green")
-        self.display_page(0)
 
     def delete_account(self):
         reply = QtWidgets.QMessageBox.question(self, 'Delete Account', "Are you sure you want to delete this account?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
         if reply == QtWidgets.QMessageBox.Yes:
-            self.cursor.execute("DELETE FROM accounts WHERE id=?", (self.current_account['id'],))
-            self.conn.commit()
-            self.load_accounts()
+            delete_account(self.current_account['id'])
+            self.accounts = load_accounts()
             self.update_account_list()
             self.show_notification("Account deleted successfully!", "red")
             self.display_page(0)

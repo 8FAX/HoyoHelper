@@ -1,40 +1,18 @@
-# -------------------------------------------------------------------------------------
-# HoYo Helper - a hoyolab helper tool
-# Made with ♥ by 8FA (Uilliam.com)
-
-# Copyright (C) 2024 copyright.Uilliam.com
-
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Affero General Public License for more details.
-
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see https://github.com/8FAX/HoyoHelper/blob/main/LICENSE.md.
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# do not remove this notice
-
-# This file is part of HoYo Helper.
-#version 0.6.4
-# -------------------------------------------------------------------------------------
-
-
 import sys
-import sqlite3
 import hashlib
 import os
+import asyncio
 from PyQt5 import QtWidgets, QtCore, QtGui
+from dependencies.login import run_account
+from dependencies.pips import get_token, format_cookies
+from dependencies.encrypt import encrypt, decrypt
+from database import setup_database, load_accounts, save_account, update_account, delete_account
 
-DB_NAME = "accounts.db"
 SALT_SIZE = 16
 HASH_ITERATIONS = 100000
 NOTIFICATION_DURATION = 3000  # Duration in milliseconds
 NOTIFICATION_SPACING = 10     # Spacing between notifications
+ENCRIPTION_KEY = "123"
 
 class NotificationWidget(QtWidgets.QWidget):
     def __init__(self, message, parent=None, color="red"):
@@ -107,8 +85,8 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.X11BypassWindowManagerHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
-        self.setup_database()
-        self.load_accounts()
+        setup_database()
+        self.accounts = load_accounts()
         self.setup_ui()
         self.load_css()
 
@@ -198,99 +176,11 @@ class AccountManagerApp(QtWidgets.QWidget):
 
         return title_bar
 
-    def create_title_button(self, text):
-        button = QtWidgets.QPushButton(text)
-        button.setFixedSize(40, 40)
-        button.setStyleSheet("QPushButton { background-color: #2c2f33; color: white; border: none; } QPushButton:hover { background-color: #40444b; }")
-        return button
-
-    def toggle_maximize(self):
-        if self.is_maximized:
-            self.showNormal()
-            self.is_maximized = False
-        else:
-            self.showMaximized()
-            self.is_maximized = True
-
-    def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
-            self._start_pos = event.globalPos()
-            self._old_pos = self.pos()
-            if not self._is_resizing:
-                self._resize_direction = self.get_resize_direction(event.pos())
-
-    def mouseMoveEvent(self, event):
-        if self._start_pos:
-            delta = event.globalPos() - self._start_pos
-            if self._is_resizing:
-                self.resize_window(event.globalPos())
-            else:
-                if self._resize_direction:
-                    self._is_resizing = True
-                else:
-                    self.move(self._old_pos + delta)
-        else:
-            self.setCursor(self.get_cursor_shape(event.pos()))
-
-    def mouseReleaseEvent(self, event):
-        self._start_pos = None
-        self._is_resizing = False
-        self._resize_direction = None
-        self.setCursor(QtCore.Qt.ArrowCursor)
-
-    def get_resize_direction(self, pos):
-        if pos.x() < self._margin and pos.y() < self._margin:
-            return 'top_left'
-        elif pos.x() < self._margin and pos.y() > self.height() - self._margin:
-            return 'bottom_left'
-        elif pos.x() > self.width() - self._margin and pos.y() < self._margin:
-            return 'top_right'
-        elif pos.x() > self.width() - self._margin and pos.y() > self.height() - self._margin:
-            return 'bottom_right'
-        elif pos.x() < self._margin:
-            return 'left'
-        elif pos.x() > self.width() - self._margin:
-            return 'right'
-        elif pos.y() < self._margin:
-            return 'top'
-        elif pos.y() > self.height() - self._margin:
-            return 'bottom'
-        return None
-
-    def resize_window(self, pos):
-        if self._resize_direction == 'top_left':
-            self.setGeometry(QtCore.QRect(pos, self.geometry().bottomRight()))
-        elif self._resize_direction == 'bottom_left':
-            self.setGeometry(QtCore.QRect(QtCore.QPoint(pos.x(), self.geometry().top()), QtCore.QPoint(self.geometry().right(), pos.y())))
-        elif self._resize_direction == 'top_right':
-            self.setGeometry(QtCore.QRect(QtCore.QPoint(self.geometry().left(), pos.y()), QtCore.QPoint(pos.x(), self.geometry().bottom())))
-        elif self._resize_direction == 'bottom_right':
-            self.setGeometry(QtCore.QRect(self.geometry().topLeft(), pos))
-        elif self._resize_direction == 'left':
-            self.setGeometry(QtCore.QRect(QtCore.QPoint(pos.x(), self.geometry().top()), self.geometry().bottomRight()))
-        elif self._resize_direction == 'right':
-            self.setGeometry(QtCore.QRect(self.geometry().topLeft(), QtCore.QPoint(pos.x(), self.geometry().bottom())))
-        elif self._resize_direction == 'top':
-            self.setGeometry(QtCore.QRect(QtCore.QPoint(self.geometry().left(), pos.y()), self.geometry().bottomRight()))
-        elif self._resize_direction == 'bottom':
-            self.setGeometry(QtCore.QRect(self.geometry().topLeft(), QtCore.QPoint(self.geometry().right(), pos.y())))
-
-    def get_cursor_shape(self, pos):
-        direction = self.get_resize_direction(pos)
-        if direction in ['top_left', 'bottom_right']:
-            return QtCore.Qt.SizeFDiagCursor
-        elif direction in ['top_right', 'bottom_left']:
-            return QtCore.Qt.SizeBDiagCursor
-        elif direction in ['left', 'right']:
-            return QtCore.Qt.SizeHorCursor
-        elif direction in ['top', 'bottom']:
-            return QtCore.Qt.SizeVerCursor
-        return QtCore.Qt.ArrowCursor
-
     def clear_account_inputs(self):
         self.nickname_entry.clear()
         self.username_entry.clear()
         self.password_entry.clear()
+        self.webhook_entry.clear()
         for checkbox in self.games_vars:
             checkbox.setChecked(False)
 
@@ -317,6 +207,9 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.password_entry = QtWidgets.QLineEdit()
         self.password_entry.setEchoMode(QtWidgets.QLineEdit.Password)
         layout.addRow("Password:", self.password_entry)
+
+        self.webhook_entry = QtWidgets.QLineEdit()
+        layout.addRow("Webhook:", self.webhook_entry)
 
         self.toggle_password_visibility_button = QtWidgets.QPushButton("Show/Hide Password")
         self.toggle_password_visibility_button.clicked.connect(self.toggle_password_visibility)
@@ -382,6 +275,9 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.edit_password_entry.setEchoMode(QtWidgets.QLineEdit.Password)
         self.edit_details_layout.addRow("Password:", self.edit_password_entry)
 
+        self.edit_webhook_entry = QtWidgets.QLineEdit()
+        self.edit_details_layout.addRow("Webhook:", self.edit_webhook_entry)
+
         self.toggle_edit_password_visibility_button = QtWidgets.QPushButton("Show/Hide Password")
         self.toggle_edit_password_visibility_button.clicked.connect(self.toggle_edit_password_visibility)
         self.edit_details_layout.addRow(self.toggle_edit_password_visibility_button)
@@ -414,8 +310,8 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.show_notification("Please enter the password.", "red")
             return
 
-        password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(self.current_account['salt']), HASH_ITERATIONS).hex()
-        if password_hash == self.current_account['password_hash']:
+        decrypted_password = decrypt(ENCRIPTION_KEY, self.current_account['encrypted_password'])
+        if password == decrypted_password:
             self.enable_edit_fields()
             self.load_edit_account_page(password)
             self.edit_password_verify_entry.hide()
@@ -431,6 +327,7 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.edit_nickname_entry.setText(self.current_account['nickname'])
             self.edit_username_entry.setText(self.current_account['username'])
             self.edit_password_entry.setText(password)
+            self.edit_webhook_entry.setText(self.current_account['webhook'])
             for checkbox in self.edit_games_vars:
                 checkbox.setChecked(checkbox.text() in self.current_account['games'])
 
@@ -447,6 +344,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.edit_nickname_entry.setEnabled(True)
         self.edit_username_entry.setEnabled(True)
         self.edit_password_entry.setEnabled(True)
+        self.edit_webhook_entry.setEnabled(True)
         self.save_edit_button.setEnabled(True)
         self.delete_account_button.setEnabled(True)
         for checkbox in self.edit_games_vars:
@@ -454,40 +352,6 @@ class AccountManagerApp(QtWidgets.QWidget):
 
     def display_page(self, index):
         self.stacked_widget.setCurrentIndex(index)
-
-    def setup_database(self):
-        self.conn = sqlite3.connect(DB_NAME)
-        self.cursor = self.conn.cursor()
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS accounts (
-                id INTEGER PRIMARY KEY,
-                nickname TEXT NOT NULL,
-                username TEXT NOT NULL,
-                password_hash TEXT NOT NULL,
-                salt TEXT NOT NULL,
-                games TEXT NOT NULL,
-                token TEXT,
-                passing TEXT
-            )
-        ''')
-        self.conn.commit()
-
-    def load_accounts(self):
-        self.accounts = []
-        self.cursor.execute("SELECT * FROM accounts")
-        rows = self.cursor.fetchall()
-        for row in rows:
-            account = {
-                "id": row[0],
-                "nickname": row[1],
-                "username": row[2],
-                "password_hash": row[3],
-                "salt": row[4],
-                "games": row[5].split(','),
-                "token": row[6],
-                "passing": row[7]
-            }
-            self.accounts.append(account)
 
     def update_account_list(self):
         self.account_listbox.clear()
@@ -499,27 +363,26 @@ class AccountManagerApp(QtWidgets.QWidget):
         nickname = self.nickname_entry.text()
         username = self.username_entry.text()
         password = self.password_entry.text()
+        webhook = self.webhook_entry.text()
         games = [checkbox.text() for checkbox in self.games_vars if checkbox.isChecked()]
 
-        if not nickname or not username or not password or not games:
+        if not nickname or not username or not password or not games or not webhook:
+            print(nickname, username, password, games, webhook)
             self.show_notification("Please fill out all fields and select at least one game.", "red")
             return
 
-        salt = os.urandom(SALT_SIZE)
-        password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, HASH_ITERATIONS).hex()
+        password_ciphertext = encrypt(ENCRIPTION_KEY, password)
+        save_account(nickname, username, password_ciphertext, games, webhook)
 
-        self.cursor.execute('''
-            INSERT INTO accounts (nickname, username, password_hash, salt, games, token, passing)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (nickname, username, password_hash, salt.hex(), ','.join(games), "", ""))
-        self.conn.commit()
-
-        self.load_accounts()
+        self.accounts = load_accounts()
         self.update_account_list()
         self.display_page(0)
         self.clear_account_inputs()
         self.show_notification("Account saved successfully!", "green")
-
+        self.show_notification("Attempting to get the token...", "green")
+    
+        asyncio.run(get_token(self.accounts[-1], self.conn, self.cursor))
+        
     def database_path(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self, "Database Path")
         if path:
@@ -584,37 +447,31 @@ class AccountManagerApp(QtWidgets.QWidget):
         nickname = self.edit_nickname_entry.text()
         username = self.edit_username_entry.text()
         password = self.edit_password_entry.text()
+        webhook = self.edit_webhook_entry.text()
         games = [checkbox.text() for checkbox in self.edit_games_vars if checkbox.isChecked()]
 
-        if not nickname or not username or (password and not games):
+        if not nickname or not username or not webhook or (password and not games):
             self.show_notification("Please fill out all fields and select at least one game.", "red")
             return
 
         if password:
-            salt = os.urandom(SALT_SIZE)
-            password_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, HASH_ITERATIONS).hex()
+            encrypted_password = encrypt(ENCRIPTION_KEY, password)
         else:
-            password_hash = self.current_account['password_hash']
-            salt = bytes.fromhex(self.current_account['salt'])
+            encrypted_password = self.current_account['encrypted_password']
 
-        self.cursor.execute('''
-            UPDATE accounts
-            SET nickname=?, username=?, password_hash=?, salt=?, games=?
-            WHERE id=?
-        ''', (nickname, username, password_hash, salt.hex(), ','.join(games), self.current_account['id']))
-        self.conn.commit()
+        update_account(self.current_account['id'], nickname, username, encrypted_password, games, webhook)
 
-        self.load_accounts()
+        self.accounts = load_accounts()
         self.update_account_list()
         self.show_notification("Account updated successfully!", "green")
+        self.show_notification("Attempting to get the token...", "green")
         self.display_page(0)
 
     def delete_account(self):
         reply = QtWidgets.QMessageBox.question(self, 'Delete Account', "Are you sure you want to delete this account?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
         if reply == QtWidgets.QMessageBox.Yes:
-            self.cursor.execute("DELETE FROM accounts WHERE id=?", (self.current_account['id'],))
-            self.conn.commit()
-            self.load_accounts()
+            delete_account(self.current_account['id'])
+            self.accounts = load_accounts()
             self.update_account_list()
             self.show_notification("Account deleted successfully!", "red")
             self.display_page(0)
@@ -659,6 +516,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.edit_nickname_entry.clear()
         self.edit_username_entry.clear()
         self.edit_password_entry.clear()
+        self.webhook_entry.clear()
         for checkbox in self.edit_games_vars:
             checkbox.setChecked(False)
         self.edit_password_verify_entry.show()

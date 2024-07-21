@@ -29,7 +29,7 @@ from playwright.async_api import Playwright, async_playwright
 import time
 
 
-async def get_token(password: str, username: str, playwright: Playwright = Playwright) -> list[dict[str, any]]: 
+async def get_cookie(password: str, username: str, playwright: Playwright = Playwright) -> list[dict[str, any]]: 
     """
     This Python async function uses Playwright to automate logging into a website and retrieving
     cookies.
@@ -40,8 +40,8 @@ async def get_token(password: str, username: str, playwright: Playwright = Playw
     automate logging into a website and retrieving cookies. It seems like you were about to provide
     information about the `password` parameter but it got cut off. If you need any assistance with
     completing the code or have any specific questions, feel free
-    @param username (str) - The `username` parameter in the `get_token` function is used to specify the
-    username of the account for which you want to retrieve the authentication token. This username will
+    @param username (str) - The `username` parameter in the `get_cookie` function is used to specify the
+    username of the account for which you want to retrieve the authentication cookie. This username will
     be used to log in to the specified website and obtain the necessary cookies for authentication.
     @param playwright (Playwright) - Playwright is a Python library that provides a high-level API for
     automating browsers. It allows you to control browser instances and interact with web pages
@@ -73,19 +73,23 @@ async def get_token(password: str, username: str, playwright: Playwright = Playw
     time.sleep(8)
 
     try:
-        await page.locator(".mhy-hoyolab-account-block__avatar-icon").wait_for_element_state("visible")
-        print("Logged in")
-        print("Waiting for cookies")
-        cookies = await context.cookies()
-        await context.close()
-        await browser.close()
-        return cookies
+        logged_in = await page.frame_locator("#hyv-account-frame").get_by_role("button", name="Log In").is_visible()
+        if not logged_in:
+
+            print("Logged in")
+            print("Waiting for cookies")
+            cookies = await context.cookies()
+            await context.close()
+            await browser.close()
+            return cookies
+        else:
+            print("Failed to login")
+            return False
 
     except AttributeError as e:
         print("Failed to login")
         print(e)
         return False
-
 
 def format_cookies(cookies: list[dict[str, any]]) -> str:
     """
@@ -114,10 +118,13 @@ async def main() -> None:
     input_username = input("Enter your username: ")
     input_password = input("Enter your password: ")
     async with async_playwright() as playwright:
-        cookies = await get_token(input_password, input_username, playwright)
-        with open("cookies.txt", "w") as f:
-            f.write(format_cookies(cookies))
-    
+        cookies = await get_cookie(input_password, input_username, playwright)
+        if not cookies:
+            print("Failed to get cookies")
+        else:
+            with open("cookies.txt", "w") as f:
+                f.write(format_cookies(cookies))
+        
 
 # The `if __name__ == "__main__":` block in the Python script is a common idiom used to ensure that
 # the code inside it is only executed when the script is run directly, and not when it is imported as
