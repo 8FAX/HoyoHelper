@@ -24,7 +24,6 @@ class CookieThread(QtCore.QThread):
     def run(self):
         cookies: list[dict[str, any]] = asyncio.run(get_cookie(self.password, self.username))
         if cookies:
-            cookies = format_cookies(cookies) 
             self.result.emit(cookies)
         else:
             self.result.emit(False)
@@ -481,13 +480,15 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.cookie_thread.result.connect(self.handle_cookie_result)
         self.cookie_thread.start()
 
-    def handle_cookie_result(self, cookies):
-        if cookies:
-            cookie = format_cookies(cookies)
-            passing = True
-        else:
-            self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
+    def handle_cookie_result(self, cookie):
+        print("-----")
+        print(cookie)
+        print("-----")
+        if not cookie:
             passing = False
+            self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
+        else:
+            passing = True
 
         nickname = self.nickname_entry.text()
         username = self.username_entry.text()
