@@ -23,7 +23,7 @@ async def get_cookie(password: str, username: str) -> list[dict[str, any]]:
     """
 
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch(headless=True)
+        browser = await playwright.chromium.launch(headless=False)
         context = await browser.new_context()
         page = await context.new_page()
 
@@ -45,20 +45,15 @@ async def get_cookie(password: str, username: str) -> list[dict[str, any]]:
         try:
             logged_in = await page.frame_locator("#hyv-account-frame").get_by_role("button", name="Log In").is_visible()
             if not logged_in:
-                print("Logged in")
-                print("Waiting for cookies")
                 cookies = await context.cookies()
                 await context.close()
                 await browser.close()
                 return cookies
             else:
-                print("Failed to login")
-                return []
+                return False
 
         except Exception as e:
-            print("Failed to login")
-            print(e)
-            return []
+            return False
 
 def format_cookies(cookies: list[dict[str, any]]) -> str:
     """

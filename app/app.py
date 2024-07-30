@@ -24,7 +24,8 @@ class CookieThread(QtCore.QThread):
     def run(self):
         cookies: list[dict[str, any]] = asyncio.run(get_cookie(self.password, self.username))
         if cookies:
-            self.result.emit(cookies)
+            formatted_cookies = format_cookies(cookies)
+            self.result.emit(formatted_cookies)
         else:
             self.result.emit(False)
 
@@ -328,7 +329,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         layout.addRow("Games:", self.games_layout)
 
         self.save_account_button = QtWidgets.QPushButton("Save Account")
-        self.save_account_button.clicked.connect(self.save_account)
+        self.save_account_button.clicked.connect(self.save_account_update)
         layout.addWidget(self.save_account_button)
 
     def setup_settings_ui(self):
@@ -459,10 +460,10 @@ class AccountManagerApp(QtWidgets.QWidget):
     def update_account_list(self):
         self.account_listbox.clear()
         for account in self.accounts:
-            status = "✓" if account["passing"] else "✗"
+            status = "✓" if account["passing"] else "✗" if account["passing"] is not None else "↻"
             self.account_listbox.addItem(f"{account['nickname']} ({status})")
 
-    def save_account(self):
+    def save_account_update(self):
         nickname = self.nickname_entry.text()
         username = self.username_entry.text()
         password = self.password_entry.text()
@@ -474,35 +475,40 @@ class AccountManagerApp(QtWidgets.QWidget):
             return
 
         self.show_notification("Attempting to get the cookie...", "green")
-        self.display_page(0)
-
-        self.cookie_thread = CookieThread(username, password)
-        self.cookie_thread.result.connect(self.handle_cookie_result)
-        self.cookie_thread.start()
-
-    def handle_cookie_result(self, cookie):
-        print("-----")
-        print(cookie)
-        print("-----")
-        if not cookie:
-            passing = False
-            self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
-        else:
-            passing = True
-
-        nickname = self.nickname_entry.text()
-        username = self.username_entry.text()
-        password = self.password_entry.text()
-        webhook = self.webhook_entry.text()
-        games = [checkbox.text() for checkbox in self.games_vars if checkbox.isChecked()]
 
         password_ciphertext = encrypt(ENCRIPTION_KEY, password)
-        save_account(nickname, username, password_ciphertext, games, webhook, cookie, passing)
+        account_id = save_account(nickname, username, password_ciphertext, games, webhook, None, False)
 
         self.accounts = load_accounts()
         self.update_account_list()
         self.clear_account_inputs()
-        self.show_notification("Account saved successfully!", "green")
+        self.display_page(0)
+
+        self.cookie_thread = CookieThread(username, password)
+        self.cookie_thread.result.connect(lambda cookies: self.handle_cookie_result(cookies, account_id))
+        self.cookie_thread.start()
+
+    def handle_cookie_result(self, cookies, account_id):
+        account = next((acc for acc in self.accounts if acc['id'] == account_id), None)
+        if not account:
+            self.show_notification("No account found with the provided ID.", "red")
+            return
+
+        if cookies:
+            cookie = format_cookies(cookies)
+            passing = True
+            self.show_notification("Account saved successfully!", "green")
+        else:
+            cookie = None
+            passing = False
+            self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
+
+        update_account(account['id'], account['nickname'], account['username'], account['encrypted_password'], 
+                    account['games'], account['webhook'], cookie, passing)
+
+        self.accounts = load_accounts()
+        self.update_account_list()
+
     
         
     def database_path(self):
@@ -571,10 +577,9 @@ class AccountManagerApp(QtWidgets.QWidget):
 
     def handle_new_cookie_result(self, cookies):
         if cookies:
-            cookie = format_cookies(cookies)
-            self.current_account['cookie'] = cookie
+            self.current_account['cookie'] = cookies
             update_account(self.current_account['id'], self.current_account['nickname'], self.current_account['username'],
-                           self.current_account['encrypted_password'], self.current_account['games'], self.current_account['webhook'], cookie, True)
+                           self.current_account['encrypted_password'], self.current_account['games'], self.current_account['webhook'], cookies, True)
             self.show_notification("New cookie obtained successfully!", "green")
         else:
             self.show_notification("Failed to get the new cookie. Please check the username and password.", "red")
@@ -593,47 +598,48 @@ class AccountManagerApp(QtWidgets.QWidget):
         webhook = self.edit_webhook_entry.text()
         games = [checkbox.text() for checkbox in self.edit_games_vars if checkbox.isChecked()]
 
-        if not nickname or not username or not password or not games or not webhook:
+        if not nickname or not username or not games or not webhook:
             self.show_notification("Please fill out all fields and select at least one game.", "red")
             return
 
         self.show_notification("Attempting to get the cookie...", "green")
-
-        self.cookie_thread = CookieThread(username, password)
-        self.cookie_thread.result.connect(self.handle_edit_cookie_result)
-        self.cookie_thread.start()
-        self.display_page(0)
-
-        
-
-        self.accounts = load_accounts()
-        self.update_account_list()
-        self.show_notification("Account updated successfully!", "green")
-    
-    def handle_edit_cookie_result(self, cookies):
-        nickname = self.edit_nickname_entry.text()
-        username = self.edit_username_entry.text()
-        password = self.edit_password_entry.text()
-        webhook = self.edit_webhook_entry.text()
-        games = [checkbox.text() for checkbox in self.edit_games_vars if checkbox.isChecked()]
-
-        if cookies:
-            cookie = format_cookies(cookies)
-            passing = True
-        else:
-            self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
-            passing = False
 
         if password:
             encrypted_password = encrypt(ENCRIPTION_KEY, password)
         else:
             encrypted_password = self.current_account['encrypted_password']
 
-        update_account(self.current_account['id'], nickname, username, encrypted_password, games, webhook, cookie, passing)
-
+        update_account(self.current_account['id'], nickname, username, encrypted_password, games, webhook, None, False)
         self.accounts = load_accounts()
         self.update_account_list()
-        self.show_notification("Account updated successfully!", "green")
+
+        self.cookie_thread = CookieThread(username, password if password else decrypt(ENCRIPTION_KEY, self.current_account['encrypted_password']))
+        self.cookie_thread.result.connect(lambda cookies: self.handle_edit_cookie_result(cookies, self.current_account['id']))
+        self.cookie_thread.start()
+    
+    def handle_edit_cookie_result(self, cookies, account_id):
+        account = next((acc for acc in self.accounts if acc['id'] == account_id), None)
+        if not account:
+            self.show_notification("No account found with the provided ID.", "red")
+            return
+
+        if cookies:
+            cookie = format_cookies(cookies)
+            passing = True
+            self.show_notification("Account updated successfully!", "green")
+        else:
+            cookie = None
+            passing = False
+            self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
+
+        # Update the account in the database
+        update_account(account['id'], account['nickname'], account['username'], account['encrypted_password'], 
+                    account['games'], account['webhook'], cookie, passing)
+
+        # Refresh the account list
+        self.accounts = load_accounts()
+        self.update_account_list()
+
 
     def delete_account(self):
         reply = QtWidgets.QMessageBox.question(self, 'Delete Account', "Are you sure you want to delete this account?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)

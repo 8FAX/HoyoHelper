@@ -260,7 +260,7 @@ def card_generator(data: Dict[str,str]) -> Image.Image:
     if icon_1.mode != 'RGBA':
         icon_1 = icon_1.convert('RGBA')
     
-    if not data['end_of_month']:
+    if data['end_of_month']:
         icon_2: Image.Image = Image.open(BytesIO(requests.get(data['icon_2']).content))
         icon_2 = icon_2.resize((100, 100))
         if icon_2.mode != 'RGBA':
@@ -278,7 +278,7 @@ def card_generator(data: Dict[str,str]) -> Image.Image:
     d.text((180, 120), f"{data['name_1']} x{data['cnt_1']}", font=font_reward, fill="pink")
     d.text((179, 119), f"{data['name_1']} x{data['cnt_1']}", font=font_reward, fill="purple")
 
-    if data['end_of_month']:
+    if not data['end_of_month']:
         sticker_number: int = random.randint(2, 153)
         sticker: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/character_stickers/{sticker_number}.png')
         if sticker is None:
@@ -329,18 +329,34 @@ def data_parser(rewards: list[dict[str,str]], day_count: str, refresh_time: str,
 
 
     if not end_of_month:
-        tomorrow: Dict[str,Any] = rewards[day_count + 1]
-        data: Dict[str,str] = {
+        try:
+            tomorrow: Dict[str,Any] = rewards[day_count + 1]
+        except IndexError:
+            logging.error("Failed to get tomorrow's rewards.")
+            tomorrow = None
+
+        if tomorrow is None:
+            data: Dict[str,str]  = {
             "icon_1": today["icon"],
             "name_1": today["name"],
             "cnt_1": today["cnt"],
-            "icon_2": tomorrow["icon"],
-            "name_2": tomorrow["name"],
-            "cnt_2": tomorrow["cnt"],
             "end_of_month": end_of_month,
             "days": day_count+1,
             "refresh": refresh_time
         }
+            
+        else:
+            data: Dict[str,str] = {
+                "icon_1": today["icon"],
+                "name_1": today["name"],
+                "cnt_1": today["cnt"],
+                "icon_2": tomorrow["icon"],
+                "name_2": tomorrow["name"],
+                "cnt_2": tomorrow["cnt"],
+                "end_of_month": end_of_month,
+                "days": day_count+1,
+                "refresh": refresh_time
+            }
     else:
         data: Dict[str,str]  = {
             "icon_1": today["icon"],
@@ -421,7 +437,7 @@ def process_account(cookie: str, name: str, links: str) -> bool:
     if not signedin:
         logging.info(f"{name} has not signed in today, proceeding to sign in...")
         message: str  = f"{name} has signed in and gotten this reward:"
-        if len(rewards) <= day_count+1:
+        if len(rewards) <= day_count:
             logging.info(f"{name} has just claimed the last rewards for this month, cannot see next month's rewards yet check back tomorrow.")
             end_of_month = True
             data = data_parser(rewards, day_count, refresh_time_formatted, end_of_month, signedin)

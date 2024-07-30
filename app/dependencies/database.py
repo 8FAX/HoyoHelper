@@ -178,7 +178,7 @@ def update_account(id: int, nickname: str, username: str, encrypted_password: st
     cursor: Cursor = conn.cursor()
     cursor.execute('''
         UPDATE accounts
-        SET nickname=?, username=?, encrypted_password=?, games=?, webhook=? cookie=?, passing=?
+        SET nickname=?, username=?, encrypted_password=?, games=?, webhook=?, cookie=?, passing=?
         WHERE id=?
     ''', (nickname, username, encrypted_password, ','.join(games), webhook, cookie, passing, id))
     conn.commit()
