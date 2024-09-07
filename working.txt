@@ -1,0 +1,30 @@
+working on:
+
+databse.py
+
+    check_database()
+
+        i need to check if the database exists, if not, create it also i need to save data that is needed for startup like the database path and the database name i need to find 
+        a way to save this data in a file that is not the database file itself, so i can read it before the database is created or connected to
+
+app.py
+
+    class AccountManagerApp(QtWidgets.QWidget):
+    def __init__(self):
+
+        loading database path and name from the file
+        as well as loading settings and runtine data
+
+    setup_new_user_ui()
+
+    encription_toggle()
+    database_path()
+    rest_time()
+
+    Backround for main window not working well with the rest of the app
+
+    account on home page is not deselected when switching to another page
+
+    groups are not setup 
+
+    add an info page that shows the user how to use the app check for updates and other info like github page wiki and contact info and credits for the app

@@ -20,14 +20,15 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.1.0
+#version 0.1.1
 # -------------------------------------------------------------------------------------
 
 import sqlite3
 from sqlite3 import Connection, Cursor
 from typing import List, Dict, Any
+import os
 
-DB_NAME = "accounts.db"
+DB_NAME = "Info.db"
 
 def get_connection(file: str = DB_NAME) -> Connection:
     """
@@ -46,11 +47,11 @@ def get_connection(file: str = DB_NAME) -> Connection:
 
 def setup_database() -> bool:
     """
-    The function `setup_database` creates a table named `accounts` in a database if it does not already
+    The function `setup_database` creates a table named `accounts` `groups` and `settings` in a database if it does not already
     exist.
     
     Author - Liam Scott
-    Last update - 07/20/2024
+    Last update - 09/5/2024
     @returns The function `setup_database()` is returning a boolean value `True` indicating that the
     database setup was successful.
     
@@ -67,6 +68,21 @@ def setup_database() -> bool:
             webhook TEXT,
             cookie TEXT,
             passing TEXT
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS groups (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            members TEXT
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS settings (
+            id INTEGER PRIMARY KEY,
+            encript TEXT NOT NULL,
+            rest TEXT NOT NULL,
+            first TEXT
         )
     ''')
     conn.commit()
@@ -202,3 +218,219 @@ def delete_account(id: int) -> bool:
     conn.commit()
     conn.close()
     return True
+
+def load_groups() -> List[Dict[str, Any]]:
+    """
+    The `load_groups` function loads group information from a database table into a list of dictionaries.
+    
+    Author - Liam Scott
+    Last update - 07/20/2024
+    @returns The `load_groups` function returns a list of dictionaries representing groups. Each dictionary
+    contains the following keys: "id", "name", and "members".
+    
+    """
+    conn: Connection = get_connection()
+    cursor: Cursor = conn.cursor()
+    cursor.execute("SELECT * FROM groups")
+    rows = cursor.fetchall()
+    conn.close()
+    groups: List[Dict[str, Any]] = []
+    for row in rows:
+        group = {
+            "id": row[0],
+            "name": row[1],
+            "members": row[2].split(',')
+        }
+        groups.append(group)
+    return groups
+
+def save_group(name: str, members: List[str]) -> bool:
+    """
+    The `save_group` function saves group information into a database table.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    @param name (str) - The `name` parameter in the `save_group` function is a string that represents the
+    name of the group being saved.
+    @param members (List[str]) - The `members` parameter in the `save_group` function is a list of strings
+    representing the members of the group being saved. These members will be stored in the database as a
+    comma-separated string when saving the group information.
+    @returns The function `save_group` is returning a boolean value `True`.
+    
+    """
+    conn: Connection = get_connection()
+    cursor: Cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO groups (name, members)
+        VALUES (?, ?)
+    ''', (name, ','.join(members)))
+    conn.commit()
+    conn.close()
+    return True
+
+def remove_group_member(group_id: int, member: str) -> bool:
+    """
+    The `remove_group_member` function removes a member from a group in a database table.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    @param group_id (int) - The `group_id` parameter in the `remove_group_member` function is an integer
+    that represents the unique identifier of the group from which the member needs to be removed.
+    @param member (str) - The `member` parameter in the `remove_group_member` function is a string that
+    represents the member to be removed from the group.
+    @returns The function `remove_group_member` is returning a boolean value `True`.
+    
+    """
+    conn: Connection = get_connection()
+    cursor: Cursor = conn.cursor()
+    cursor.execute("SELECT members FROM groups WHERE id=?", (group_id,))
+    row = cursor.fetchone()
+    if row is None:
+        conn.close()
+        return False
+    members = row[0].split(',')
+    if member in members:
+        members.remove(member)
+        cursor.execute("UPDATE groups SET members=? WHERE id=?", (','.join(members), group_id))
+        conn.commit()
+        conn.close()
+        return True
+    conn.close()
+    return False
+
+def add_group_member(group_id: int, member: str) -> bool:
+    """
+    The `add_group_member` function adds a member to a group in a database table.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    @param group_id (int) - The `group_id` parameter in the `add_group_member` function is an integer that
+    represents the unique identifier of the group to which the member needs to be added.
+    @param member (str) - The `member` parameter in the `add_group_member` function is a string that
+    represents the member to be added to the group.
+    @returns The function `add_group_member` is returning a boolean value `True`.
+    
+    """
+    conn: Connection = get_connection()
+    cursor: Cursor = conn.cursor()
+    cursor.execute("SELECT members FROM groups WHERE id=?", (group_id,))
+    row = cursor.fetchone()
+    if row is None:
+        conn.close()
+        return False
+    members = row[0].split(',')
+    if member not in members:
+        members.append(member)
+        cursor.execute("UPDATE groups SET members=? WHERE id=?", (','.join(members), group_id))
+        conn.commit()
+        conn.close()
+        return True
+    conn.close()
+    return False
+
+def delete_group(id: int) -> bool:
+    """
+    The `delete_group` function deletes a group from a database based on the provided ID.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    @param id (int) - The `id` parameter in the `delete_group` function is an integer that represents the
+    unique identifier of the group that needs to be deleted from the database.
+    @returns The function `delete_group` is returning a boolean value `True`.
+    
+    """
+    conn: Connection = get_connection()
+    cursor: Cursor = conn.cursor()
+    cursor.execute("DELETE FROM groups WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+    return True
+
+def load_settings() -> List[Dict[str, Any]]:
+    """
+    The `load_settings` function loads settings information from a database table into a list of dictionaries.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    @returns The `load_settings` function returns a list of dictionaries representing settings. Each dictionary
+    contains the following keys: "id", "encript", "rest", and "members".
+    
+    """
+    conn: Connection = get_connection()
+    cursor: Cursor = conn.cursor()
+    cursor.execute("SELECT * FROM settings")
+    rows = cursor.fetchall()
+    conn.close()
+    settings: List[Dict[str, Any]] = []
+    for row in rows:
+        setting = {
+            "id": row[0],
+            "encript": row[1],
+            "rest": row[2],
+            "members": row[3].split(',')
+        }
+        settings.append(setting)
+    return settings
+
+def set_default_settings() -> bool:
+    """
+    The `set_default_settings` function sets default settings in a database table.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    @returns The function `set_default_settings` is returning a boolean value `True`.
+    
+    """
+    conn: Connection = get_connection()
+    cursor: Cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO settings (encript, rests, first)
+        VALUES (?, ?, ?)
+    ''', ("TRUE", "10", "FALSE"))
+    conn.commit()
+    conn.close()
+    return True
+
+def update_settings(val_type: str, val: str) -> bool:
+    """
+    The `update_settings` function updates settings in a database table.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    @param val_type (str) - The `val_type` parameter in the `update_settings` function is a string that
+    represents the type of value being updated. It could be "encript" or "rest".
+    @param val (str) - The `val` parameter in the `update_settings` function is a string that represents
+    the new value to be set for the specified type.
+    @returns The function `update_settings` is returning a boolean value `True`.
+    
+    """
+    conn: Connection = get_connection()
+    cursor: Cursor = conn.cursor()
+    if val_type == "encript":
+        cursor.execute("UPDATE settings SET encript=?", (val,))
+        return True
+    elif val_type == "rest":
+        cursor.execute("UPDATE settings SET rest=?", (val,))
+        return True
+    elif val_type == "first":
+        cursor.execute("UPDATE settings SET first=?", (val,))
+        return True
+    else:
+        return False
+    
+def check_database():
+    """
+    The `check_database` function checks if the database exists and sets it up if it does not.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    
+    """
+    if not os.path.exists(DB_NAME):
+        setup_database()
+    try:
+        conn: Connection = get_connection()
+        conn.close()
+        return True
+    except sqlite3.OperationalError:
+        return False

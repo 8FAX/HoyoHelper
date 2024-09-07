@@ -20,7 +20,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.7.0
+#version 0.7.1
 # -------------------------------------------------------------------------------------
 
 
@@ -32,7 +32,7 @@ import logging
 import random
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from io import BytesIO, BufferedReader
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta 
 from dotenv import load_dotenv
 from typing import Tuple, List, Any, Dict
 import json
@@ -227,7 +227,7 @@ def webhook(message: str, card: Image.Image = None) -> bool:
             logging.error(f"Failed to send webhook notification: {e}")
             return False
     else:
-        buffer = BytesIO()
+        buffer: BufferedReader = BytesIO()
         card.save(buffer, format="PNG" )
         buffer.seek(0)
         files: Dict[str, tuple] = {'file': ('Card.png', buffer, 'image/png')}
@@ -260,7 +260,7 @@ def card_generator(data: Dict[str,str]) -> Image.Image:
     if icon_1.mode != 'RGBA':
         icon_1 = icon_1.convert('RGBA')
     
-    if data['end_of_month']:
+    if not data['end_of_month']:
         icon_2: Image.Image = Image.open(BytesIO(requests.get(data['icon_2']).content))
         icon_2 = icon_2.resize((100, 100))
         if icon_2.mode != 'RGBA':
@@ -278,7 +278,7 @@ def card_generator(data: Dict[str,str]) -> Image.Image:
     d.text((180, 120), f"{data['name_1']} x{data['cnt_1']}", font=font_reward, fill="pink")
     d.text((179, 119), f"{data['name_1']} x{data['cnt_1']}", font=font_reward, fill="purple")
 
-    if not data['end_of_month']:
+    if data['end_of_month']:
         sticker_number: int = random.randint(2, 153)
         sticker: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/character_stickers/{sticker_number}.png')
         if sticker is None:
@@ -329,34 +329,18 @@ def data_parser(rewards: list[dict[str,str]], day_count: str, refresh_time: str,
 
 
     if not end_of_month:
-        try:
-            tomorrow: Dict[str,Any] = rewards[day_count + 1]
-        except IndexError:
-            logging.error("Failed to get tomorrow's rewards.")
-            tomorrow = None
-
-        if tomorrow is None:
-            data: Dict[str,str]  = {
+        tomorrow: Dict[str,Any] = rewards[day_count + 1]
+        data: Dict[str,str] = {
             "icon_1": today["icon"],
             "name_1": today["name"],
             "cnt_1": today["cnt"],
+            "icon_2": tomorrow["icon"],
+            "name_2": tomorrow["name"],
+            "cnt_2": tomorrow["cnt"],
             "end_of_month": end_of_month,
             "days": day_count+1,
             "refresh": refresh_time
         }
-            
-        else:
-            data: Dict[str,str] = {
-                "icon_1": today["icon"],
-                "name_1": today["name"],
-                "cnt_1": today["cnt"],
-                "icon_2": tomorrow["icon"],
-                "name_2": tomorrow["name"],
-                "cnt_2": tomorrow["cnt"],
-                "end_of_month": end_of_month,
-                "days": day_count+1,
-                "refresh": refresh_time
-            }
     else:
         data: Dict[str,str]  = {
             "icon_1": today["icon"],
@@ -437,7 +421,7 @@ def process_account(cookie: str, name: str, links: str) -> bool:
     if not signedin:
         logging.info(f"{name} has not signed in today, proceeding to sign in...")
         message: str  = f"{name} has signed in and gotten this reward:"
-        if len(rewards) <= day_count:
+        if len(rewards) <= day_count+1:
             logging.info(f"{name} has just claimed the last rewards for this month, cannot see next month's rewards yet check back tomorrow.")
             end_of_month = True
             data = data_parser(rewards, day_count, refresh_time_formatted, end_of_month, signedin)
@@ -482,6 +466,35 @@ def process_account(cookie: str, name: str, links: str) -> bool:
                     logging.info(f"Webhook sent for {name}.")
     return True
 
+def run_account(cookie: str, name: str, games: list[str]) -> bool:
+
+    if not cookie or not name or not games:
+        logging.error(f"Missing environment variables for account {name}.")
+        return False
+    
+    logging.info(f"Processing account {name}")
+    logging.debug(f"Account info - Cookie: {cookie}, Name: {name}, Act ID: {games}")
+
+    for game in games:
+        logging.debug(f"Game: {game}")
+        if game == "gi":
+            links = get_links("https://8fax.github.io/HoyoHelper/info/links/gi_links.txt")
+        elif game == "hsr":
+            links = get_links("https://8fax.github.io/HoyoHelper/info/links/hsr_links.txt")
+        elif game == "zzz":
+            links = get_links("https://8fax.github.io/HoyoHelper/info/links/zzz_links.txt")
+        else:
+            logging.error(f"Invalid game specified for account {name}.")
+            continue
+        if not process_account(cookie, name, links):
+            message: str = f"Failed to process account {name}, please check the logs."
+            is_sent: bool = webhook(message)
+            if is_sent:
+                logging.info(f"Webhook sent for {name}.")
+            False
+        time.sleep(5)
+    return True
+
 def main() -> None:
     if not load_env():
         raise SystemError("Failed to load environment variables.")
@@ -511,6 +524,7 @@ def main() -> None:
                 if is_sent:
                     logging.info(f"Webhook sent for {name}.")
             time.sleep(5)
+
 
 if __name__ == "__main__":
     main()

@@ -4,11 +4,9 @@ import asyncio
 from PyQt5 import QtWidgets, QtCore, QtGui
 from dependencies.login import run_account
 from dependencies.pips import get_cookie, format_cookies
-from dependencies.encrypt import encrypt, decrypt
-from dependencies.database import setup_database, load_accounts, save_account, update_account, delete_account
+from dependencies.encrypt import encrypt, decrypt, database_encript, database_decript
+from dependencies.database import setup_database, load_accounts, save_account, update_account, delete_account, load_groups, save_group, delete_group, remove_group_member, add_group_member, load_settings, set_default_settings, update_settings
 
-SALT_SIZE = 16
-HASH_ITERATIONS = 100000
 NOTIFICATION_DURATION = 3000  # Duration in milliseconds
 NOTIFICATION_SPACING = 10     # Spacing between notifications
 ENCRIPTION_KEY = "123"
@@ -104,6 +102,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.accounts = load_accounts()
         self.setup_ui()
         self.load_css()
+        self.settings = load_settings()
 
         self.notifications = []
 
@@ -155,6 +154,9 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.setup_edit_account_ui()
         self.stacked_widget.addWidget(self.edit_account_page)
 
+        self.new_user_page = QtWidgets.QWidget()
+        self.setup_new_user_ui()
+
         self.nav_list.setCurrentRow(0)  #
 
     def create_title_bar(self):
@@ -183,9 +185,6 @@ class AccountManagerApp(QtWidgets.QWidget):
         close_button.clicked.connect(self.close)
         title_layout.addWidget(close_button)
 
-        title_bar.mousePressEvent = self.mousePressEvent
-        title_bar.mouseMoveEvent = self.mouseMoveEvent
-
         self.is_maximized = False
         self.start_pos = None
 
@@ -204,32 +203,6 @@ class AccountManagerApp(QtWidgets.QWidget):
         else:
             self.showMaximized()
             self.is_maximized = True
-
-    def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
-            self._start_pos = event.globalPos()
-            self._old_pos = self.pos()
-            if not self._is_resizing:
-                self._resize_direction = self.get_resize_direction(event.pos())
-
-    def mouseMoveEvent(self, event):
-        if self._start_pos:
-            delta = event.globalPos() - self._start_pos
-            if self._is_resizing:
-                self.resize_window(event.globalPos())
-            else:
-                if self._resize_direction:
-                    self._is_resizing = True
-                else:
-                    self.move(self._old_pos + delta)
-        else:
-            self.setCursor(self.get_cursor_shape(event.pos()))
-
-    def mouseReleaseEvent(self, event):
-        self._start_pos = None
-        self._is_resizing = False
-        self._resize_direction = None
-        self.setCursor(QtCore.Qt.ArrowCursor)
 
     def get_resize_direction(self, pos):
         if pos.x() < self._margin and pos.y() < self._margin:
@@ -268,18 +241,6 @@ class AccountManagerApp(QtWidgets.QWidget):
         elif self._resize_direction == 'bottom':
             self.setGeometry(QtCore.QRect(self.geometry().topLeft(), QtCore.QPoint(self.geometry().right(), pos.y())))
 
-    def get_cursor_shape(self, pos):
-        direction = self.get_resize_direction(pos)
-        if direction in ['top_left', 'bottom_right']:
-            return QtCore.Qt.SizeFDiagCursor
-        elif direction in ['top_right', 'bottom_left']:
-            return QtCore.Qt.SizeBDiagCursor
-        elif direction in ['left', 'right']:
-            return QtCore.Qt.SizeHorCursor
-        elif direction in ['top', 'bottom']:
-            return QtCore.Qt.SizeVerCursor
-        return QtCore.Qt.ArrowCursor
-
     def clear_account_inputs(self):
         self.nickname_entry.clear()
         self.username_entry.clear()
@@ -287,6 +248,45 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.webhook_entry.clear()
         for checkbox in self.games_vars:
             checkbox.setChecked(False)
+
+    def setup_new_user_ui(self):
+        layout = QtWidgets.QFormLayout(self.new_user_page)
+
+        self.label = QtWidgets.QLabel("Welcome to the Account Manager!")
+        layout.addRow(self.label)
+        self.label = QtWidgets.QLabel("Please enter an encryption key to secure your account data.")
+        layout.addRow(self.label)
+        self.label = QtWidgets.QLabel("This key will be used to encrypt and decrypt your account information.")
+        self.label.setWordWrap(True)
+        layout.addRow(self.label)
+        self.label = QtWidgets.QLabel("You will need this key to access your account data in the future, so make sure to remember it!")
+        self.label.setWordWrap(True)
+        layout.addRow(self.label)
+        self.label = QtWidgets.QLabel("You can change this key later in the settings, or disable encryption entirely.")
+        self.label.setWordWrap(True)
+        layout.addRow(self.label)
+
+        self.encryption_key_entry = QtWidgets.QLineEdit()
+        layout.addRow("Encryption Key:", self.encryption_key_entry)
+        
+        self.save_encryption_key_button = QtWidgets.QPushButton("Save Key")
+        self.save_encryption_key_button.clicked.connect(self.save_encryption_key)
+
+        layout.addWidget(self.save_encryption_key_button)
+
+    def save_encryption_key(self):
+        key = self.encryption_key_entry.text()
+        if not key:
+            self.show_notification("Please enter an encryption key.", "red")
+            return
+        else:
+            self.show_notification("Encryption key saved successfully!", "green")
+            self.encryption_key_entry.clear()
+            self.display_page(0)
+            self.key = key
+            set_default_settings()
+            update_settings("first", "TRUE")
+
 
     def setup_home_ui(self):
         layout = QtWidgets.QVBoxLayout(self.home_page)
@@ -339,13 +339,9 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.database_button.clicked.connect(self.database_path)
         layout.addWidget(self.database_button)
 
-        self.hash_length_button = QtWidgets.QPushButton("Salt Length")
-        self.hash_length_button.clicked.connect(self.hash_length)
-        layout.addWidget(self.hash_length_button)
-
-        self.hash_iterations_button = QtWidgets.QPushButton("Hash Iterations")
-        self.hash_iterations_button.clicked.connect(self.hash_iterations)
-        layout.addWidget(self.hash_iterations_button)
+        self.encription_button = QtWidgets.QPushButton("Encription Toggle")
+        self.encription_button.clicked.connect(self.encription_toggle)
+        layout.addWidget(self.encription_button)
 
         self.rest_button = QtWidgets.QPushButton("Rest Time")
         self.rest_button.clicked.connect(self.rest_time)
@@ -509,22 +505,21 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.accounts = load_accounts()
         self.update_account_list()
 
-    
+    def encription_toggle(self):
+        settings = self.settings
+        if settings['encription'] == "True":
+            settings['encription'] = "False"
+
+            self.show_notification(f"Encription is now disabled, THIS IS VERY DANGEROUS!", "red")
+
+        pass
         
     def database_path(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self, "Database Path")
         if path:
-            self.show_notification(f"Database path set to: {path}", "green")
+            self.show_notification(f"Database path is unimplemented!", "red")
+            #self.show_notification(f"Database path set to: {path}", "green")
 
-    def hash_length(self):
-        length, ok = QtWidgets.QInputDialog.getInt(self, "Hash Length", "Enter the hash length:")
-        if ok:
-            self.show_notification(f"Hash length set to: {length}", "green")
-
-    def hash_iterations(self):
-        iterations, ok = QtWidgets.QInputDialog.getInt(self, "Hash Iterations", "Enter the number of hash iterations:")
-        if ok:
-            self.show_notification(f"Hash iterations set to: {iterations}", "green")
 
     def rest_time(self):
         time, ok = QtWidgets.QInputDialog.getInt(self, "Rest Time", "Enter the rest time in seconds:")

@@ -20,13 +20,14 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.1.0
+#version 0.1.1
 # -------------------------------------------------------------------------------------
 
 import os
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
+from database import load_accounts, update_account
 
 def encrypt(key: str, plaintext: str) -> bytes:
     """
@@ -92,3 +93,100 @@ def decrypt(key: str, ciphertext: bytes) -> str:
     plaintext = unpadder.update(padded_plaintext) + unpadder.finalize()
     
     return plaintext.decode('utf-8')
+
+def database_decript(key: str, ciphertext: bytes) -> str:
+    """
+    The function decrypts a ciphertext using AES encryption with a given key and returns the decrypted
+    plaintext.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    @param key (str) - The `key` parameter is the encryption key used to decrypt the ciphertext. It
+    should be a string that represents the key in UTF-8 encoding.
+    @param ciphertext (bytes) - It seems like you forgot to provide the value for the `ciphertext`
+    parameter. Please provide the ciphertext value so that I can assist you with decrypting it using the
+    given `decrypt` function.
+    @returns The function decrypts the ciphertext using the provided key and returns the decrypted
+    plaintext as a string.
+    
+    """
+    backend = default_backend()
+    key = key.encode('utf-8')
+    key = key.ljust(32)[:32]
+    
+    accounts = load_accounts()
+    for account in accounts:
+        account_id = account['id']
+        encrypted_password = account['encrypted_password']
+        encrypted_name = account['nickname']
+        encrypted_cookie = account['cookie']
+        encrypted_webhook = account['webhook']
+
+        encrypted_list = [encrypted_password, encrypted_name, encrypted_cookie, encrypted_webhook]
+
+        for encrypted in encrypted_list:
+            decripted_list = []
+            if encrypted:
+                iv = encrypted[:16] 
+                actual_ciphertext = encrypted[16:]
+                
+                cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=backend)
+                decryptor = cipher.decryptor()
+                
+                padded_plaintext = decryptor.update(actual_ciphertext) + decryptor.finalize()
+                
+                unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+                plaintext = unpadder.update(padded_plaintext) + unpadder.finalize()
+                
+                decripted_list.append(plaintext.decode('utf-8'))
+            else:
+                decripted_list.append(None)
+        update_account(account_id, decripted_list[0], decripted_list[1], decripted_list[2], decripted_list[3])
+    return True
+
+def database_encript(key: str) -> str:
+    """
+    The function decrypts a ciphertext using AES encryption with a given key and returns the decrypted
+    plaintext.
+    
+    Author - Liam Scott
+    Last update - 09/5/2024
+    @param key (str) - The `key` parameter is the encryption key used to decrypt the ciphertext. It
+    should be a string that represents the key in UTF-8 encoding.
+    @param ciphertext (bytes) - It seems like you forgot to provide the value for the `ciphertext`
+    parameter. Please provide the ciphertext value so that I can assist you with decrypting it using the
+    given `decrypt` function.
+    @returns The function decrypts the ciphertext using the provided key and returns the decrypted
+    plaintext as a string.
+    
+    """
+    backend = default_backend()
+    key = key.encode('utf-8')
+    key = key.ljust(32)[:32]
+    
+    accounts = load_accounts()
+    for account in accounts:
+        account_id = account['id']
+        encrypted_password = account['encrypted_password']
+        encrypted_name = account['nickname']
+        encrypted_cookie = account['cookie']
+        encrypted_webhook = account['webhook']
+
+        encrypted_list = [encrypted_password, encrypted_name, encrypted_cookie, encrypted_webhook]
+
+        for encrypted in encrypted_list:
+            encripted_list = []
+            if encrypted:
+                iv = os.urandom(16)  
+                cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=backend)
+                encryptor = cipher.encryptor()
+                
+                padder = padding.PKCS7(algorithms.AES.block_size).padder()
+                padded_data = padder.update(encrypted.encode('utf-8')) + padder.finalize()
+                
+                ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+                encripted_list.append(iv + ciphertext)
+            else:
+                encripted_list.append(None)
+        update_account(account_id, encripted_list[0], encripted_list[1], encripted_list[2], encripted_list[3])
+    return True
