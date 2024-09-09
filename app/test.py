@@ -1,134 +1,159 @@
-# -------------------------------------------------------------------------------------
-# HoYo Helper - a hoyolab helper tool
-# Made with ♥ by 8FA (Uilliam.com)
+import sys
+import ctypes
+from ctypes import wintypes
+import win32con
+import win32api
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QFont, QIcon
 
-# Copyright (C) 2024 copyright.Uilliam.com
+class CustomTitleBar(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.title = QLabel("Custom Title Bar")
 
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
+        btn_size = 35
 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Affero General Public License for more details.
+        self.btn_close = QPushButton("×")
+        self.btn_close.setFixedSize(btn_size, btn_size)
+        self.btn_close.clicked.connect(self.parent.close)
 
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see https://github.com/8FAX/HoyoHelper/blob/main/LICENSE.md.
-# SPDX-License-Identifier: AGPL-3.0-or-later
-# do not remove this notice
+        self.btn_min = QPushButton("−")
+        self.btn_min.setFixedSize(btn_size, btn_size)
+        self.btn_min.clicked.connect(self.parent.showMinimized)
 
-# This file is part of HoYo Helper.
-#version 0.1.2
-# -------------------------------------------------------------------------------------
+        self.btn_max = QPushButton("□")
+        self.btn_max.setFixedSize(btn_size, btn_size)
+        self.btn_max.clicked.connect(self.maximize_restore)
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+        self.title.setFixedHeight(35)
+        self.title.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(self.title)
+        self.layout.addWidget(self.btn_min)
+        self.layout.addWidget(self.btn_max)
+        self.layout.addWidget(self.btn_close)
 
-NOTIFICATION_DURATION = 3000  # Duration in milliseconds
+        self.setLayout(self.layout)
 
-class NotificationWidget(QtWidgets.QWidget):
-    def __init__(self, message, parent=None, color="red"):
-        super().__init__(parent)
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.Tool | QtCore.Qt.X11BypassWindowManagerHint)
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.start = QPoint(0, 0)
+        self.pressing = False
 
-        layout = QtWidgets.QVBoxLayout(self)
-        self.label = QtWidgets.QLabel(self)
-        self.label.setWordWrap(True)
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
-        layout.addWidget(self.label)
-        layout.setContentsMargins(10, 10, 10, 10)
+    def resizeEvent(self, QResizeEvent):
+        super(CustomTitleBar, self).resizeEvent(QResizeEvent)
+        self.title.setFixedWidth(self.parent.width())
 
-        self.setStyleSheet(f"color: {color}; text-align: center; text-decoration: none; font-weight: bold; font-family: Arial;")
+    def mousePressEvent(self, event):
+        self.start = self.mapToGlobal(event.pos())
+        self.pressing = True
 
-        self.timer = QtCore.QTimer(self)
-        self.timer.setInterval(NOTIFICATION_DURATION)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(self.hide_notification)
+    def mouseMoveEvent(self, event):
+        if self.pressing:
+            self.end = self.mapToGlobal(event.pos())
+            self.movement = self.end - self.start
+            self.parent.setGeometry(self.mapToGlobal(self.movement).x(),
+                                    self.mapToGlobal(self.movement).y(),
+                                    self.parent.width(),
+                                    self.parent.height())
+            self.start = self.end
 
-        self.adjust_font_size(message)
-        self.adjustSize()
+    def mouseReleaseEvent(self, QMouseEvent):
+        self.pressing = False
 
-    def adjust_font_size(self, message):
-        font_size = 14
-        self.label.setText(message)
-        self.label.setStyleSheet(f"font-size: {font_size}px;")
-        fm = QtGui.QFontMetrics(self.label.font())
-        text_rect = fm.boundingRect(self.label.text())
-
-        while (text_rect.width() > self.width() - 20 or text_rect.height() > self.height() - 20) and font_size > 14:
-            font_size -= 1
-            self.label.setStyleSheet(f"font-size: {font_size}px;")
-            fm = QtGui.QFontMetrics(self.label.font())
-            text_rect = fm.boundingRect(self.label.text())
-
-        self.label.setText(message)
-
-    def show_notification(self):
-        if self.parent():
-            parent_geometry = self.parent().geometry()
-            widget_geometry = self.geometry()
-            x = max(0, parent_geometry.x() + parent_geometry.width() - widget_geometry.width() - 15)
-            y = max(0, parent_geometry.y() + parent_geometry.height() - widget_geometry.height() - 40)
-            self.move(x, y)
-        self.show()
-        self.timer.start()
-        self.animate_popup()
-
-    def hide_notification(self):
-        self.animate_disappearance()
-
-    def animate_popup(self):
-        self.anim = QtCore.QPropertyAnimation(self, b"pos")
-        self.anim.setDuration(500)
-        self.anim.setStartValue(QtCore.QPoint(self.x(), self.y() + self.height()))
-        self.anim.setEndValue(QtCore.QPoint(self.x(), self.y()))
-        self.anim.start()
-
-    def animate_disappearance(self):
-        self.anim = QtCore.QPropertyAnimation(self, b"pos")
-        self.anim.setDuration(500)
-        self.anim.setStartValue(QtCore.QPoint(self.x(), self.y()))
-        self.anim.setEndValue(QtCore.QPoint(self.x(), self.y() + self.height()))
-        self.anim.finished.connect(self.close)
-        self.anim.start()
+    def maximize_restore(self):
+        if self.parent.isMaximized():
+            self.parent.showNormal()
+            self.btn_max.setText("□")
+        else:
+            self.parent.showMaximized()
+            self.btn_max.setText("❐")
 
 
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Main Window")
-        self.setGeometry(100, 100, 800, 600)
-        self.notifications = []
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
 
-        # Main layout
-        central_widget = QtWidgets.QWidget()
-        self.setCentralWidget(central_widget)
-        main_layout = QtWidgets.QVBoxLayout(central_widget)
-        
-        # Button to trigger notifications
-        self.notify_button = QtWidgets.QPushButton("Show Notification long")
-        self.notify_button.clicked.connect(lambda: self.show_notification("This is a test notification. It may be long, so it needs to fit within the box. and thats super super cool!"))
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
 
-        self.notify_button2 = QtWidgets.QPushButton("Show Notification short")
-        self.notify_button2.clicked.connect(lambda: self.show_notification("This is a test notification."))
-        main_layout.addWidget(self.notify_button)
-        main_layout.addWidget(self.notify_button2)
+        self.title_bar = CustomTitleBar(self)
+        self.layout.addWidget(self.title_bar)
 
-    def show_notification(self, message, color="red"):
-        notification = NotificationWidget(message, self, color)
-        notification.show_notification()
-        self.notifications.append(notification)
-        notification.timer.timeout.connect(lambda: self.remove_notification(notification))
+        self.content = QWidget()
+        self.content.setStyleSheet("""
+            background-color: #f0f0f0;
+            border: 1px solid #cccccc;
+        """)
+        self.layout.addWidget(self.content)
 
-    def remove_notification(self, notification):
-        self.notifications.remove(notification)
+        self.central_widget.setLayout(self.layout)
+
+        self.start = QPoint(0, 0)
+        self.pressing = False
+
+    def resizeEvent(self, QResizeEvent):
+        super(MainWindow, self).resizeEvent(QResizeEvent)
+        self.title_bar.setFixedWidth(self.width())
+
+    def mousePressEvent(self, event):
+        self.start = event.globalPos()
+        self.pressing = True
+
+    def mouseMoveEvent(self, event):
+        if self.pressing:
+            self.end = event.globalPos()
+            self.movement = self.end - self.start
+            self.setGeometry(self.pos().x() + self.movement.x(),
+                             self.pos().y() + self.movement.y(),
+                             self.width(),
+                             self.height())
+            self.start = self.end
+
+    def mouseReleaseEvent(self, QMouseEvent):
+        self.pressing = False
+
+    def nativeEvent(self, eventType, message):
+        retval, result = super(MainWindow, self).nativeEvent(eventType, message)
+        if eventType == "windows_generic_MSG":
+            msg = ctypes.wintypes.MSG.from_address(message.__int__())
+            if msg.message == win32con.WM_NCHITTEST:
+                x = win32api.LOWORD(msg.lParam) - self.frameGeometry().x()
+                y = win32api.HIWORD(msg.lParam) - self.frameGeometry().y()
+                w = self.width()
+                h = self.height()
+                lx = x < 8
+                rx = x > w - 8
+                ty = y < 8
+                by = y > h - 8
+                if lx and ty:
+                    return True, win32con.HTTOPLEFT
+                if rx and by:
+                    return True, win32con.HTBOTTOMRIGHT
+                if rx and ty:
+                    return True, win32con.HTTOPRIGHT
+                if lx and by:
+                    return True, win32con.HTBOTTOMLEFT
+                if ty:
+                    return True, win32con.HTTOP
+                if by:
+                    return True, win32con.HTBOTTOM
+                if lx:
+                    return True, win32con.HTLEFT
+                if rx:
+                    return True, win32con.HTRIGHT
+        return retval, result
 
 
 if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
+    app = QApplication(sys.argv)
+    mw = MainWindow()
+    mw.setGeometry(100, 100, 300, 200)
+    mw.show()
     sys.exit(app.exec_())

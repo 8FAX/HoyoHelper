@@ -28,3 +28,18 @@ app.py
     groups are not setup 
 
     add an info page that shows the user how to use the app check for updates and other info like github page wiki and contact info and credits for the app
+
+login.py
+    rethink the cdn for the background image / links.txt file as the links files keeps giving errors when being pulled from the cdn
+
+code_claim.py 
+
+    create a new class that will be used to claim codes and check if they are valid
+
+    add codes and a code verisoning system to the cdn and the app so that codes can be updated and changed without breaking the app and users can claim codes and get rewards based on what the admins upload to the cnd 
+
+proxy.py
+    
+    work on the proxy class and make sure that it is working correctly and that it is not leaking any data
+
+    see if accouns need to be run though spific proxies for a given region or if they can be claimed from any region
