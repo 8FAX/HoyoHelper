@@ -27,7 +27,6 @@ import os
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
-from database import load_accounts, update_account
 
 def encrypt(key: str, plaintext: str) -> bytes:
     """
@@ -94,7 +93,7 @@ def decrypt(key: str, ciphertext: bytes) -> str:
     
     return plaintext.decode('utf-8')
 
-def database_decript(key: str, ciphertext: bytes) -> str:
+def database_decrypt(key: str, ciphertext: bytes) -> str:
     """
     The function decrypts a ciphertext using AES encryption with a given key and returns the decrypted
     plaintext.
@@ -110,6 +109,7 @@ def database_decript(key: str, ciphertext: bytes) -> str:
     plaintext as a string.
     
     """
+    from app.dependencies.database import load_accounts, update_account
     backend = default_backend()
     key = key.encode('utf-8')
     key = key.ljust(32)[:32]
@@ -144,7 +144,7 @@ def database_decript(key: str, ciphertext: bytes) -> str:
         update_account(account_id, decripted_list[0], decripted_list[1], decripted_list[2], decripted_list[3])
     return True
 
-def database_encript(key: str) -> str:
+def database_encrypt(key: str) -> str:
     """
     The function decrypts a ciphertext using AES encryption with a given key and returns the decrypted
     plaintext.
@@ -160,6 +160,7 @@ def database_encript(key: str) -> str:
     plaintext as a string.
     
     """
+    from app.dependencies.database import load_accounts, update_account
     backend = default_backend()
     key = key.encode('utf-8')
     key = key.ljust(32)[:32]

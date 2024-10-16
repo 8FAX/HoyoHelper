@@ -4,8 +4,11 @@ import asyncio
 from PyQt5 import QtWidgets, QtCore, QtGui
 from dependencies.login import run_account
 from dependencies.pips import get_cookie, format_cookies
-from dependencies.encrypt import encrypt, decrypt, database_encript, database_decript
-from dependencies.database import setup_database, load_accounts, save_account, update_account, delete_account, load_groups, save_group, delete_group, remove_group_member, add_group_member, load_settings, set_default_settings, update_settings
+from dependencies.encrypt import encrypt, decrypt, database_encrypt, database_decrypt
+from dependencies.database import setup_database, load_accounts, save_account, update_account, delete_account, load_groups, save_group, delete_group, remove_group_member, add_group_member
+from dependencies.settings import ConfigManager
+
+
 
 NOTIFICATION_DURATION = 3000  # Duration in milliseconds
 NOTIFICATION_SPACING = 10     # Spacing between notifications
@@ -95,14 +98,15 @@ class AccountManagerApp(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("Account Manager")
         self.resize(800, 600)
-        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.X11BypassWindowManagerHint | QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint)
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.X11BypassWindowManagerHint | QtCore.Qt.WindowStaysOnTopHint ) #QtCore.Qt.FramelessWindowHint
+        #self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
         setup_database()
         self.accounts = load_accounts()
         self.setup_ui()
         self.load_css()
-        self.settings = load_settings()
+        self.settings = ConfigManager()
+        
 
         self.notifications = []
 
@@ -110,6 +114,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self._is_resizing = False
         self._resize_direction = None
         self._margin = 10 
+        
 
     def load_css(self):
         css_file_path = os.path.join(os.path.dirname(__file__), 'styles.css')
@@ -284,8 +289,8 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.encryption_key_entry.clear()
             self.display_page(0)
             self.key = key
-            set_default_settings()
-            update_settings("first", "TRUE")
+            self.settings.load_defaults()
+            self.settings.set_version("1.0.0")
 
 
     def setup_home_ui(self):
@@ -507,18 +512,19 @@ class AccountManagerApp(QtWidgets.QWidget):
 
     def encription_toggle(self):
         settings = self.settings
-        if settings['encription'] == "True":
-            settings['encription'] = "False"
+        if settings.get_database_encrypt():
+            settings.set_database_encrypt(False)
+            self.show_notification(f"Encryption is OFF", "red")
+        if not settings.get_database_encrypt():
+            settings.set_database_encrypt(True)
+            self.show_notification(f"Encryption is ON", "red")
 
-            self.show_notification(f"Encription is now disabled, THIS IS VERY DANGEROUS!", "red")
-
-        pass
         
     def database_path(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self, "Database Path")
         if path:
-            self.show_notification(f"Database path is unimplemented!", "red")
-            #self.show_notification(f"Database path set to: {path}", "green")
+            self.settings.set_database_path(path)
+            self.show_notification(f"Database path set to: {path}", "green")
 
 
     def rest_time(self):

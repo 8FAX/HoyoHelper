@@ -2,3 +2,13 @@
 /UI_REMAKE
 accounts.db
 .env
+/.conda
+info.db
+settings.json
+
+# Byte-compiled / optimized / DLL files
+/app/dependencies/__pycache__
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
