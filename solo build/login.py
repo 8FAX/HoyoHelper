@@ -20,7 +20,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.7.1
+#version 0.7.3
 # -------------------------------------------------------------------------------------
 
 
@@ -30,14 +30,20 @@ import os
 import time
 import logging
 import random
-from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError, ImageFile
 from io import BytesIO, BufferedReader
 from datetime import datetime, timezone, timedelta 
 from dotenv import load_dotenv
 from typing import Tuple, List, Any, Dict
 import json
 
-def header_formater(cookie: str = False) -> Dict[str,str]:
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+def header_formater(cookie: str = False, links: Dict[str,str] = None) -> Dict[str,str]:
+
+    if links:
+        gameformat: str = links.get('short_name')
+
     if not cookie:
         logging.debug("No cookie provided, returning cdn headers.")
         headers = {
@@ -53,10 +59,11 @@ def header_formater(cookie: str = False) -> Dict[str,str]:
         "Sec-Ch-Ua-Platform": '"Android"',
         "Sec-Fetch-Dest": "document",
         "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
+        "sec-fetch-mode": "cors",
+        "Sec-Fetch-Site": "same-site",
         "Sec-Fetch-User": "?1",
         "Upgrade-Insecure-Requests": "1",
-        "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36",
     }
         return headers
     else:
@@ -73,7 +80,8 @@ def header_formater(cookie: str = False) -> Dict[str,str]:
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-site",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "x-rpc-signgame": gameformat
         }
         return headers
 
@@ -127,7 +135,7 @@ def time_formater(time: str) -> str:
         return f"{days}d {hours}h {minutes}m"
 
 def reward_info(cookie: str, links: Dict[str,str]) -> List[Dict[str,str]]:
-    headers: dict[str,str] = header_formater(cookie)
+    headers: dict[str,str] = header_formater(cookie = cookie, links = links)
     rewards_url: str = links.get('reward_info')
 
     
@@ -142,7 +150,7 @@ def reward_info(cookie: str, links: Dict[str,str]) -> List[Dict[str,str]]:
         return None
 
 def day_counter(cookie: str, links: str) -> int:
-    headers: dict[str,str] = header_formater(cookie)
+    headers: dict[str,str] = header_formater(cookie = cookie, links = links)
     
     day_count_url: str = links.get('day_counter')
 
@@ -158,7 +166,7 @@ def day_counter(cookie: str, links: str) -> int:
         return None
 
 def time_info(cookie: str, links: str) -> str:
-    headers: dict[str,str] = header_formater(cookie)
+    headers: dict[str,str] = header_formater(cookie = cookie, links = links)
 
     time_url: str = links.get('time_info')
 
@@ -174,7 +182,7 @@ def time_info(cookie: str, links: str) -> str:
         return None
 
 def signin_check(cookie: str, links: str) -> bool:
-    headers: dict[str,str] = header_formater(cookie)
+    headers: dict[str,str] = header_formater(cookie = cookie, links = links)
 
     signin_check_url: str = links.get('signin_check')
 
@@ -187,9 +195,12 @@ def signin_check(cookie: str, links: str) -> bool:
     except requests.exceptions.RequestException as e:
         logging.error(f"Request for signin_check failed: {e}")
         return False
+    except AttributeError as e:
+        logging.error(f"Failed to get signin status: {e}")
+        return False
 
 def signin(cookie: str, links: str) -> bool:
-    headers: dict[str,str] = header_formater(cookie)
+    headers: dict[str,str] = header_formater(cookie = cookie, links = links)
 
     signin_url: str = links.get('signin')
     act_id: str = links.get('id')
@@ -239,32 +250,47 @@ def webhook(message: str, card: Image.Image = None) -> bool:
             logging.error(f"Failed to send webhook notification: {e}")
             return False
 
-def card_generator(data: Dict[str,str]) -> Image.Image:
-    base_number: int = random.randint(1, 9)
-    base: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/cards/{base_number}.png')
+def get_image(url: str) -> Image.Image:
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return Image.open(BytesIO(response.content))
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Failed to download image from {url}: {e}")
+        return None
+    except OSError as e:
+        logging.error(f"Failed to open image from {url}: {e}")
+        return None
+    
+
+def card_generator(data: Dict[str, str]) -> Image.Image:
+    base_number = random.randint(1, 9)
+    base = get_image(f'https://8fax.github.io/HoyoHelper/assets/gi/cards/{base_number}.png')
     if base is None:
-        logging.error("Failed to load base card image. loading default card.")
-        base = get_assets("https://8fax.github.io/HoyoHelper/assets/gi/cards/1.png")
+        logging.error("Failed to load base card image. Loading default card.")
+        base = get_image("https://8fax.github.io/HoyoHelper/assets/gi/cards/1.png")
         
     base = base.convert('RGB')
 
-    frame: Image.Image = get_assets("https://8fax.github.io/HoyoHelper/assets/other_art/UI_Frm_AlchemySimCodexPage_Bg.png")
+    frame = get_image("https://8fax.github.io/HoyoHelper/assets/other_art/UI_Frm_AlchemySimCodexPage_Bg.png")
     if frame is None:
         logging.error("Failed to load frame image. The program will continue without the frame.")
     else:
         base.paste(frame, (20, 68), frame)
         base.paste(frame, (20, 284), frame)
 
-    icon_1: Image.Image = Image.open(BytesIO(requests.get(data['icon_1']).content))
-    icon_1 = icon_1.resize((100, 100))
-    if icon_1.mode != 'RGBA':
-        icon_1 = icon_1.convert('RGBA')
+    icon_1 = get_image(data['icon_1'])
+    if icon_1:
+        icon_1 = icon_1.resize((100, 100))
+        if icon_1.mode != 'RGBA':
+            icon_1 = icon_1.convert('RGBA')
     
     if not data['end_of_month']:
-        icon_2: Image.Image = Image.open(BytesIO(requests.get(data['icon_2']).content))
-        icon_2 = icon_2.resize((100, 100))
-        if icon_2.mode != 'RGBA':
-            icon_2 = icon_2.convert('RGBA')
+        icon_2 = get_image(data['icon_2'])
+        if icon_2:
+            icon_2 = icon_2.resize((100, 100))
+            if icon_2.mode != 'RGBA':
+                icon_2 = icon_2.convert('RGBA')
         base.paste(icon_2, (40, 304), icon_2)
     
     base.paste(icon_1, (40, 88), icon_1)
@@ -510,11 +536,35 @@ def main() -> None:
         for game in games:
             logging.debug(f"Game: {game}")
             if game == "gi":
-                links = get_links("https://8fax.github.io/HoyoHelper/info/links/gi_links.txt")
+                links = {
+                            "reward_info": "https://sg-hk4e-api.hoyolab.com/event/sol/home?lang=en-us&act_id=e202102251931481",
+                            "day_counter": "https://sg-hk4e-api.hoyolab.com/event/sol/info?lang=en-us&act_id=e202102251931481",
+                            "time_info": "https://sg-hk4e-api.hoyolab.com/event/sol/recommend/info?act_id=e202102251931481&plat=PT_PC&lang=en-us",
+                            "signin_check": "https://sg-hk4e-api.hoyolab.com/event/sol/info?lang=en-us&act_id=e202102251931481",
+                            "signin": "https://sg-hk4e-api.hoyolab.com/event/sol/sign?lang=en-us",
+                            "id": "e202102251931481",
+                            "short_name": "not_used"
+                        }
             elif game == "hsr":
-                links = get_links("https://8fax.github.io/HoyoHelper/info/links/hsr_links.txt")
+                links = {
+                            "reward_info": "https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/home?lang=en-us&act_id=e202303301540311",
+                            "day_counter": "https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/info?lang=en-us&act_id=e202303301540311",
+                            "time_info": "https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/recommend?act_id=e202303301540311&plat=PT_PC&lang=en-us",
+                            "signin_check": "https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/info?lang=en-us&act_id=e202303301540311",
+                            "signin": "https://sg-public-api.hoyolab.com/event/luna/hkrpg/os/sign",
+                            "id": "e202303301540311",
+                            "short_name": "hkrpg"
+                        }
             elif game == "zzz":
-                links = get_links("https://8fax.github.io/HoyoHelper/info/links/zzz_links.txt")
+                links = {    
+                            "reward_info": "https://sg-public-api.hoyolab.com/event/luna/zzz/os/home?lang=en-us&act_id=e202406031448091",
+                            "day_counter": "https://sg-public-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id=e202406031448091",
+                            "time_info": "https://sg-public-api.hoyolab.com/event/luna/zzz/os/recommend?act_id=e202406031448091&lang=en-us&plat=PT_M",
+                            "signin_check": "https://sg-public-api.hoyolab.com/event/luna/zzz/os/info?lang=en-us&act_id=e202406031448091",
+                            "signin": "https://sg-public-api.hoyolab.com/event/luna/zzz/os/sign",
+                            "id": "e202406031448091",
+                            "short_name": "zzz"
+                        }
             else:
                 logging.error(f"Invalid game specified for account {name}.")
                 continue
