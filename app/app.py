@@ -98,15 +98,28 @@ class AccountManagerApp(QtWidgets.QWidget):
         super().__init__()
         self.setWindowTitle("Account Manager")
         self.resize(800, 600)
-        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.X11BypassWindowManagerHint | QtCore.Qt.WindowStaysOnTopHint ) #QtCore.Qt.FramelessWindowHint
+        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.X11BypassWindowManagerHint | QtCore.Qt.WindowStaysOnTopHint) #QtCore.Qt.FramelessWindowHint
         #self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
-        setup_database()
         self.accounts = load_accounts()
         self.setup_ui()
         self.load_css()
         self.settings = ConfigManager()
-        
+
+        settings = self.settings
+        settings.load_config()
+
+        if settings.get_app_first():
+            print("First time setup")
+            self.display_page(4)
+        else:
+            if settings.get_use_default_encryption_key():
+                self.key = settings.get_default_encryption_key()
+            else:
+                # prompt user for key on a cutom dialog page 
+                pass
+            self.display_page(0)
+
 
         self.notifications = []
 
@@ -227,24 +240,6 @@ class AccountManagerApp(QtWidgets.QWidget):
         elif pos.y() > self.height() - self._margin:
             return 'bottom'
         return None
-
-    def resize_window(self, pos):
-        if self._resize_direction == 'top_left':
-            self.setGeometry(QtCore.QRect(pos, self.geometry().bottomRight()))
-        elif self._resize_direction == 'bottom_left':
-            self.setGeometry(QtCore.QRect(QtCore.QPoint(pos.x(), self.geometry().top()), QtCore.QPoint(self.geometry().right(), pos.y())))
-        elif self._resize_direction == 'top_right':
-            self.setGeometry(QtCore.QRect(QtCore.QPoint(self.geometry().left(), pos.y()), QtCore.QPoint(pos.x(), self.geometry().bottom())))
-        elif self._resize_direction == 'bottom_right':
-            self.setGeometry(QtCore.QRect(self.geometry().topLeft(), pos))
-        elif self._resize_direction == 'left':
-            self.setGeometry(QtCore.QRect(QtCore.QPoint(pos.x(), self.geometry().top()), self.geometry().bottomRight()))
-        elif self._resize_direction == 'right':
-            self.setGeometry(QtCore.QRect(self.geometry().topLeft(), QtCore.QPoint(pos.x(), self.geometry().bottom())))
-        elif self._resize_direction == 'top':
-            self.setGeometry(QtCore.QRect(QtCore.QPoint(self.geometry().left(), pos.y()), self.geometry().bottomRight()))
-        elif self._resize_direction == 'bottom':
-            self.setGeometry(QtCore.QRect(self.geometry().topLeft(), QtCore.QPoint(self.geometry().right(), pos.y())))
 
     def clear_account_inputs(self):
         self.nickname_entry.clear()

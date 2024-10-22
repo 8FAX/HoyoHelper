@@ -1,36 +1,43 @@
 import json
 import secrets
 import os
+import sys 
 
 class ConfigManager:
     def __init__(self, config_file='settings.json'):
-        self.config_file = config_file
+        if os.name == 'nt':
+            self.config_file = os.path.join(os.getenv('APPDATA'), 'PasswordManager', 'data', 'settings', config_file)
+        else:
+            self.config_file = os.path.join(os.getenv('HOME'), '.config', 'PasswordManager', 'data', 'settings', config_file)
         self.config_data = self.load_config()
+        print(f"Configuration loaded from {self.config_file}.")
+
+        #dev only
+        if os.name == 'nt':
+            os.system(f"start notepad {self.config_file}")
+        elif sys.platform == 'darwin': 
+            os.system(f"open {self.config_file}")
+        else:
+            os.system(f"xdg-open {self.config_file}")
 
     def load_config(self):
         try:
             with open(self.config_file, 'r') as json_file:
                 return json.load(json_file)
         except FileNotFoundError:
-            print(f"{self.config_file} not found. Creating a new config.")
-            return {
-                "Version": "",
-                "Database": {
-                    "type": "",
-                    "Path": "",
-                    "encrypt": False
-                },
-                "App": {
-                    "Style": "",
-                    "rest": "",
-                    "first": ""
-                }
-            }
+                self.load_defaults()
+                self.set_default_encryption_key(self.generate_encryption_key())
+                return self.load_config()
 
     def save_config(self):
-        with open(self.config_file, 'w') as json_file:
+        config_dir = os.path.dirname(self.config_file)
+        if not os.path.exists(config_dir):
+            os.makedirs(config_dir)
+    
+        with os.fdopen(os.open(self.config_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as json_file:
             json.dump(self.config_data, json_file, indent=4)
         print(f"Configuration saved to {self.config_file}.")
+
 
     # Getters
     def get_version(self):
@@ -56,6 +63,9 @@ class ConfigManager:
     
     def get_default_encryption_key(self):
         return self.config_data["Database"].get("default_encryption_key", "")
+    
+    def get_use_default_encryption_key(self):
+        return self.config_data["Database"].get("use_default_encryption_key", True)
     
 
     # Setters
@@ -91,6 +101,10 @@ class ConfigManager:
         self.config_data["Database"]["default_encryption_key"] = key
         self.save_config()
 
+    def set_use_default_encryption_key(self, use):
+        self.config_data["Database"]["use_default_encryption_key"] = use
+        self.save_config()
+
     # other methods
 
     def load_defaults(self):
@@ -98,9 +112,10 @@ class ConfigManager:
             "Version": "1.0",
             "Database": {
                 "type": "sqlite",
-                "Path": "data.db",
+                "Path": "/data/database/",
                 "encrypt": False,
-                "default_encryption_key": "_KEY_DID_NOT_SET_"
+                "default_encryption_key": "_KEY_DID_NOT_SET_",
+                "use_default_encryption_key": True
             },
             "App": {
                 "Style": "dark",
@@ -121,3 +136,10 @@ class ConfigManager:
         self.set_default_encryption_key(key)
 
         return key
+    
+    def check_database_path(self) -> bool:
+        if self.get_database_path() == "":
+            return False
+        if not os.path.exists(self.get_database_path()+"accounts.db") and not os.path.exists(self.get_database_path()+"info.db"):
+            return False
+        return True
