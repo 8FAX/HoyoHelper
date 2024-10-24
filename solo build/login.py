@@ -20,7 +20,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.7.3
+#version 0.7.5
 # -------------------------------------------------------------------------------------
 
 
@@ -32,7 +32,7 @@ import logging
 import random
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError, ImageFile
 from io import BytesIO, BufferedReader
-from datetime import datetime, timezone, timedelta 
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Tuple, List, Any, Dict
 import json
@@ -120,11 +120,14 @@ def time_formater(time: str) -> str:
     now_time = datetime.now(timezone.utc)
     input_datetime = datetime.fromtimestamp(input_time, timezone.utc)
     delta = now_time - input_datetime
-    
-    days: int = delta.days
-    seconds: float = delta.total_seconds() % (24 * 3600) 
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
+
+    total_seconds_in_day = 24 * 3600
+    remaining_seconds =  (total_seconds_in_day - delta.total_seconds()) - total_seconds_in_day
+
+    days = int(remaining_seconds // (24 * 3600))
+    remaining_seconds %= (24 * 3600)
+    hours = int(remaining_seconds // 3600)
+    minutes = int((remaining_seconds % 3600) // 60)
 
     if days < 1:
         if hours < 1:
