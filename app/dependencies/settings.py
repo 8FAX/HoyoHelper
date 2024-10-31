@@ -1,7 +1,34 @@
+# -------------------------------------------------------------------------------------
+# HoYo Helper - a hoyolab helper tool
+# Made with ♥ by 8FA (Uilliam.com)
+
+# Copyright (C) 2024 copyright.Uilliam.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see https://github.com/8FAX/HoyoHelper/blob/main/LICENSE.md.
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# do not remove this notice
+
+# This file is part of HoYo Helper.
+#version 0.1.1
+# -------------------------------------------------------------------------------------
+
 import json
 import secrets
 import os
-import sys 
+import sys
+import base64
+from abc import Tuple
 
 class ConfigManager:
     def __init__(self, config_file='settings.json'):
@@ -67,6 +94,22 @@ class ConfigManager:
     def get_use_default_encryption_key(self):
         return self.config_data["Database"].get("use_default_encryption_key", True)
     
+    def get_valadation_truth(self):
+        return self.config_data["App"].get("valadation_truth", "")
+    
+    def get_valadation(self) -> Tuple[bytes, bytes]:
+        valadation_base64 = self.config_data["App"].get("valadation", "")
+        salt_base64 = self.config_data["App"].get("salt", "")
+
+        if valadation_base64 and salt_base64:
+            return base64.b64decode(valadation_base64), base64.b64decode(salt_base64)
+        return b"", b""
+    
+    def get_salt(self) -> bytes:
+        salt_base64 = self.config_data["App"].get("salt", "")
+        if salt_base64:
+            return base64.b64decode(salt_base64)
+        return b""
 
     # Setters
     def set_version(self, version):
@@ -105,6 +148,24 @@ class ConfigManager:
         self.config_data["Database"]["use_default_encryption_key"] = use
         self.save_config()
 
+    def set_valadation_truth(self, truth):
+        self.config_data["App"]["valadation_truth"] = truth
+        self.save_config()
+
+    def set_valadation(self, valadation: bytes, salt: bytes):
+
+        valadation_base64 = base64.b64encode(valadation).decode('utf-8')
+        salt_base64 = base64.b64encode(salt).decode('utf-8')
+        
+        self.config_data["App"]["valadation"] = valadation_base64
+        self.config_data["App"]["salt"] = salt_base64 # we may not need the set_salt method anymore... or i should break this method up...
+        self.save_config()
+    
+    def set_salt(self, salt: bytes):
+        salt_base64 = base64.b64encode(salt).decode('utf-8')
+        self.config_data["App"]["salt"] = salt_base64
+        self.save_config()
+
     # other methods
 
     def load_defaults(self):
@@ -116,11 +177,16 @@ class ConfigManager:
                 "encrypt": False,
                 "default_encryption_key": "_KEY_DID_NOT_SET_",
                 "use_default_encryption_key": True
+                
             },
             "App": {
                 "Style": "dark",
                 "rest": "10",
-                "first": False
+                "first": True,
+                "valadation_truth": "ciphercheck",
+                "valadation": "ciphercheck",
+                "salt": "ciphercheck"
+
             }
         }
         self.save_config()
@@ -143,3 +209,34 @@ class ConfigManager:
         if not os.path.exists(self.get_database_path()+"accounts.db") and not os.path.exists(self.get_database_path()+"info.db"):
             return False
         return True
+
+    def check_encryption_default_key(self) -> bool:
+        if self.get_use_default_encryption_key():
+            return False
+        if self.get_default_encryption_key() == "_KEY_DID_NOT_SET_":
+            return False
+        return True
+    
+    def check_valadation(self, key: str) -> bool:
+        from dependencies.encrypt import decrypt
+
+        encrypted_validation, salt = self.get_valadation()
+        
+        if not encrypted_validation or not salt:
+            print("Validation token or salt is empty.")
+            return False
+
+        try:
+            decrypted_validation = decrypt(key, encrypted_validation)
+            print(f"Decrypted validation: {decrypted_validation}")
+            
+            return decrypted_validation == self.get_valadation_truth()
+        except UnicodeDecodeError:
+            print("Decryption failed due to Unicode decoding error.")
+            return False
+        except ValueError as e:
+            print(f"Decryption failed: {e}")
+            return False
+
+        
+

@@ -24,7 +24,6 @@
 # -------------------------------------------------------------------------------------
 
 
-
 import requests 
 import os
 import time
@@ -348,18 +347,20 @@ def card_generator(data: Dict[str, str]) -> Image.Image:
 
     return base
 
-def data_parser(rewards: list[dict[str,str]], day_count: str, refresh_time: str, end_of_month: bool = False, checked_in: bool = False) -> Dict[str,any]:
+def data_parser(rewards: list[dict[str, str]], day_count: int, refresh_time: str, end_of_month: bool = False, checked_in: bool = False) -> Dict[str, Any]:
     if not checked_in:
         day_count += 1
     else:
         day_count -= 1
 
-    today: Dict[str,Any] = rewards[day_count]
+    today = rewards[day_count]
 
+    if day_count + 1 >= len(rewards):
+        end_of_month = True
 
     if not end_of_month:
-        tomorrow: Dict[str,Any] = rewards[day_count + 1]
-        data: Dict[str,str] = {
+        tomorrow = rewards[day_count + 1]
+        data = {
             "icon_1": today["icon"],
             "name_1": today["name"],
             "cnt_1": today["cnt"],
@@ -367,20 +368,21 @@ def data_parser(rewards: list[dict[str,str]], day_count: str, refresh_time: str,
             "name_2": tomorrow["name"],
             "cnt_2": tomorrow["cnt"],
             "end_of_month": end_of_month,
-            "days": day_count+1,
+            "days": day_count + 1,
             "refresh": refresh_time
         }
     else:
-        data: Dict[str,str]  = {
+        data = {
             "icon_1": today["icon"],
             "name_1": today["name"],
             "cnt_1": today["cnt"],
             "end_of_month": end_of_month,
-            "days": day_count+1,
+            "days": day_count + 1,
             "refresh": refresh_time
         }
 
     return data
+
 
 def load_env() -> bool:
     loaded: bool = load_dotenv()
@@ -521,7 +523,7 @@ def run_account(cookie: str, name: str, games: list[str]) -> bool:
             if is_sent:
                 logging.info(f"Webhook sent for {name}.")
             False
-        time.sleep(5)
+        time.sleep(2)
     return True
 
 def main() -> None:
@@ -576,7 +578,7 @@ def main() -> None:
                 is_sent: bool = webhook(message)
                 if is_sent:
                     logging.info(f"Webhook sent for {name}.")
-            time.sleep(5)
+            time.sleep(1)
 
 
 if __name__ == "__main__":

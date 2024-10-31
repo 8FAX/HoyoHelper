@@ -1,3 +1,28 @@
+# -------------------------------------------------------------------------------------
+# HoYo Helper - a hoyolab helper tool
+# Made with ♥ by 8FA (Uilliam.com)
+
+# Copyright (C) 2024 copyright.Uilliam.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see https://github.com/8FAX/HoyoHelper/blob/main/LICENSE.md.
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# do not remove this notice
+
+# This file is part of HoYo Helper.
+#version 0.8.3
+# -------------------------------------------------------------------------------------
+
 import sys
 import os
 import asyncio
@@ -12,7 +37,7 @@ from dependencies.settings import ConfigManager
 
 NOTIFICATION_DURATION = 3000  # Duration in milliseconds
 NOTIFICATION_SPACING = 10     # Spacing between notifications
-ENCRIPTION_KEY = "123"
+
 
 class CookieThread(QtCore.QThread):
     result = QtCore.pyqtSignal(object)
@@ -96,8 +121,9 @@ class NotificationWidget(QtWidgets.QWidget):
 class AccountManagerApp(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+        self.notifications = []
         self.setWindowTitle("Account Manager")
-        self.resize(800, 600)
+        self.resize(600, 800)
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.X11BypassWindowManagerHint | QtCore.Qt.WindowStaysOnTopHint) #QtCore.Qt.FramelessWindowHint
         #self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
@@ -110,32 +136,31 @@ class AccountManagerApp(QtWidgets.QWidget):
         settings.load_config()
 
         if settings.get_app_first():
-            print("First time setup")
             self.display_page(4)
         else:
             if settings.get_use_default_encryption_key():
                 self.key = settings.get_default_encryption_key()
+                self.display_page(0)
+                self.nav_list.show()
+                if settings.check_valadation(self.key):
+                    self.show_notification("Using default encryption key, key has been valadated!", "blue")
+                else:
+                    self.show_notification(f"Configuration error: use_default_encryption_key - {settings.get_default_encryption_key()} -  default_encryption_key does not decript into valadation_truth!", "red")
+                    self.display_page(6)
+                    self.nav_list.hide()
             else:
-                # prompt user for key on a cutom dialog page 
-                pass
-            self.display_page(0)
+                self.display_page(5)
 
-
-        self.notifications = []
-
-        self._start_pos = None
-        self._is_resizing = False
-        self._resize_direction = None
-        self._margin = 10 
         
-
     def load_css(self):
         css_file_path = os.path.join(os.path.dirname(__file__), 'styles.css')
         if os.path.exists(css_file_path):
             with open(css_file_path, 'r') as f:
                 self.setStyleSheet(f.read())
         else:
-            print(f"CSS file not found at {css_file_path}")
+            self.setStyleSheet("QLabel { color: white; } QPushButton { background-color: #2c2f33; color: white; border: none; } QPushButton:hover { background-color: #40444b; }")
+            print("CSS file not found. Using default styles.")
+
 
     def setup_ui(self):
         main_layout = QtWidgets.QVBoxLayout(self)
@@ -156,24 +181,40 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.stacked_widget = QtWidgets.QStackedWidget()
         central_layout.addWidget(self.stacked_widget)
 
+        # Custom page for home index 0
         self.home_page = QtWidgets.QWidget()
         self.setup_home_ui()
         self.stacked_widget.addWidget(self.home_page)
 
+        # Custom page for add account index 1
         self.add_account_page = QtWidgets.QWidget()
         self.setup_add_account_ui()
         self.stacked_widget.addWidget(self.add_account_page)
 
+        # Custom page for settings index 2
         self.settings_page = QtWidgets.QWidget()
         self.setup_settings_ui()
         self.stacked_widget.addWidget(self.settings_page)
-
+        
+        # Custom page for edit account index 3
         self.edit_account_page = QtWidgets.QWidget()
         self.setup_edit_account_ui()
         self.stacked_widget.addWidget(self.edit_account_page)
 
+        # Custom page for first time setup index 4
         self.new_user_page = QtWidgets.QWidget()
         self.setup_new_user_ui()
+        self.stacked_widget.addWidget(self.new_user_page)
+
+        # Custom page for input encryption key index 5
+        self.input_encryption_key = QtWidgets.QWidget()
+        self.setup_input_encryption_key_ui()
+        self.stacked_widget.addWidget(self.input_encryption_key)
+
+        # Custom page for error index 6
+        self.error_page = QtWidgets.QWidget()
+        self.setup_error_ui()
+        self.stacked_widget.addWidget(self.error_page)
 
         self.nav_list.setCurrentRow(0)  #
 
@@ -222,25 +263,6 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.showMaximized()
             self.is_maximized = True
 
-    def get_resize_direction(self, pos):
-        if pos.x() < self._margin and pos.y() < self._margin:
-            return 'top_left'
-        elif pos.x() < self._margin and pos.y() > self.height() - self._margin:
-            return 'bottom_left'
-        elif pos.x() > self.width() - self._margin and pos.y() < self._margin:
-            return 'top_right'
-        elif pos.x() > self.width() - self._margin and pos.y() > self.height() - self._margin:
-            return 'bottom_right'
-        elif pos.x() < self._margin:
-            return 'left'
-        elif pos.x() > self.width() - self._margin:
-            return 'right'
-        elif pos.y() < self._margin:
-            return 'top'
-        elif pos.y() > self.height() - self._margin:
-            return 'bottom'
-        return None
-
     def clear_account_inputs(self):
         self.nickname_entry.clear()
         self.username_entry.clear()
@@ -249,10 +271,88 @@ class AccountManagerApp(QtWidgets.QWidget):
         for checkbox in self.games_vars:
             checkbox.setChecked(False)
 
-    def setup_new_user_ui(self):
-        layout = QtWidgets.QFormLayout(self.new_user_page)
+    def setup_error_ui(self):
+        layout = QtWidgets.QFormLayout(self.error_page)
+        layout.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.label = QtWidgets.QLabel("Welcome to the Account Manager!")
+        self.error_label = QtWidgets.QLabel("An error occurred. Please try again.")
+        layout.addWidget(self.error_label)
+
+        self.error_label = QtWidgets.QLabel("If the error persists, please contact support.")
+        layout.addWidget(self.error_label)
+        self.error_label = QtWidgets.QLabel("Error code: 0x0001")
+        layout.addWidget(self.error_label)
+        self.error_label = QtWidgets.QLabel("Error cod is a placveholder, but there will be logic to determine the error code later so users can debug / report errors.")
+        layout.addWidget(self.error_label)
+
+        self.error_button = QtWidgets.QPushButton("Return to login")
+        self.error_button = QtWidgets.QPushButton("Return to Home")
+        self.error_button.clicked.connect(lambda: self.display_page(5))
+        layout.addWidget(self.error_button)
+
+    def setup_input_encryption_key_ui(self):
+        self.nav_list.hide()
+        layout = QtWidgets.QFormLayout(self.input_encryption_key)
+        layout.setAlignment(QtCore.Qt.AlignCenter)
+
+
+        self.label = QtWidgets.QLabel("Please enter your encryption key to access your account data.")
+        self.label.setWordWrap(True)
+        layout.addRow(self.label)
+        self.label = QtWidgets.QLabel("This key was set when you first started the application.")
+        self.label.setWordWrap(True)
+        layout.addRow(self.label)
+        self.label = QtWidgets.QLabel("If you do not remember this key, you will not be able to access your account data.")
+        self.label.setWordWrap(True)
+        layout.addRow(self.label)
+        self.label = QtWidgets.QLabel("You can change this key in the settings, or disable encryption entirely.")
+        self.label.setWordWrap(True)
+        layout.addRow(self.label)
+
+        self.encryption_key_entry = QtWidgets.QLineEdit()
+        self.encryption_key_entry.setFixedWidth(300)
+        layout.addRow("Encryption Key:", self.encryption_key_entry)
+
+        self.submit_encryption_key_button = QtWidgets.QPushButton("Submit Key")
+        self.submit_encryption_key_button.setFixedWidth(180)
+        self.submit_encryption_key_button.clicked.connect(self.submit_encryption_key)
+        layout.addWidget(self.submit_encryption_key_button)
+
+    
+
+
+    def submit_encryption_key(self):
+        key = self.encryption_key_entry.text()
+        settings = self.settings
+
+        if not key:
+            self.show_notification("Please enter an encryption key.", "red")
+            return
+
+        if key:
+            if settings.check_valadation(key):
+                self.key = key
+                self.show_notification("Encryption key accepted.", "green")
+                settings.set_app_first(False)
+                self.nav_list.show()
+                self.display_page(0)
+                self.encryption_key_entry.clear()
+                self.nav_list.show()
+            else:
+                self.show_notification("Incorrect encryption key.", "red")
+                self.display_page(5)
+                self.encryption_key_entry.clear()
+            
+
+    def setup_new_user_ui(self):
+        self.nav_list.hide()
+        self.new_user_page.setObjectName("newUserPage")
+
+        layout = QtWidgets.QFormLayout(self.new_user_page)
+        layout.setAlignment(QtCore.Qt.AlignCenter)
+
+
+        self.label = QtWidgets.QLabel("Welcome to HoyoHelper!")
         layout.addRow(self.label)
         self.label = QtWidgets.QLabel("Please enter an encryption key to secure your account data.")
         layout.addRow(self.label)
@@ -266,26 +366,75 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.label.setWordWrap(True)
         layout.addRow(self.label)
 
-        self.encryption_key_entry = QtWidgets.QLineEdit()
-        layout.addRow("Encryption Key:", self.encryption_key_entry)
+        self.encryption_key_entry_new_user = QtWidgets.QLineEdit()
+        self.encryption_key_entry_new_user.setFixedWidth(300)
+        layout.addRow("Encryption Key:", self.encryption_key_entry_new_user)
         
         self.save_encryption_key_button = QtWidgets.QPushButton("Save Key")
+        self.save_encryption_key_button.setFixedWidth(180)
         self.save_encryption_key_button.clicked.connect(self.save_encryption_key)
+        
+        self.use_default_encryption_key_button = QtWidgets.QPushButton("Use Default Encryption Key")
+        self.use_default_encryption_key_button.setFixedWidth(180)
+        self.use_default_encryption_key_button.clicked.connect(self.toggle_default_encryption_key)
 
         layout.addWidget(self.save_encryption_key_button)
 
+        self.label = QtWidgets.QLabel("If you would like to use the default encryption key, click the button below.")
+        self.label.setWordWrap(True)
+        layout.addRow(self.label)
+        self.label = QtWidgets.QLabel("This key is not as secure as a custom key, But you do *NOT* Have to remember this key to access your data in the future.")
+        self.label.setWordWrap(True)
+        layout.addRow(self.label)
+
+        layout.addRow(self.use_default_encryption_key_button)
+
+        self.understand_label = QtWidgets.QLabel("I understand what has been explained above.")
+        self.understand_label.setWordWrap(True)
+        layout.addRow(self.understand_label)
+        understand_label = QtWidgets.QLabel("By clicking the button below, you agree to use the default encryption key. / Remember your custom key.")
+        understand_label.setWordWrap(True)
+        layout.addRow(understand_label)
+
+        understand_checkbox = QtWidgets.QCheckBox("I understand")
+        understand_checkbox.setFixedWidth(180)  
+        layout.addRow(understand_checkbox)
+        
+        self.understood = False
+        understand_checkbox.stateChanged.connect(lambda state: setattr(self, 'understood', state == 2))
+
+
+    def toggle_default_encryption_key(self):
+        settings = self.settings    
+        if self.understood:
+            self.show_notification("You will not be using the default key, you can change this in the settings whenever you want.", "red")
+            settings.set_use_default_encryption_key(True)
+            self.key = settings.get_default_encryption_key()
+            encryped_truth = encrypt(self.key, settings.get_valadation_truth())
+            settings.set_valadation(encryped_truth, encryped_truth[:16])
+            self.display_page(0)
+            settings.set_app_first(False)
+            self.nav_list.show()
+        else:
+            self.show_notification("Please check the box to confirm you understand.", "red")
+            self.display_page(4)
+
     def save_encryption_key(self):
-        key = self.encryption_key_entry.text()
+        key = self.encryption_key_entry_new_user.text()
         if not key:
             self.show_notification("Please enter an encryption key.", "red")
             return
         else:
             self.show_notification("Encryption key saved successfully!", "green")
-            self.encryption_key_entry.clear()
+            self.encryption_key_entry_new_user.clear()
+            self.nav_list.show()
             self.display_page(0)
             self.key = key
-            self.settings.load_defaults()
-            self.settings.set_version("1.0.0")
+            settings = self.settings
+            settings.set_use_default_encryption_key(False)
+            settings.set_app_first(False)
+            encryped_truth = encrypt(key, settings.get_valadation_truth())
+            settings.set_valadation(encryped_truth, encryped_truth[:16])
 
 
     def setup_home_ui(self):
@@ -410,7 +559,7 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.show_notification("Please enter the password.", "red")
             return
 
-        decrypted_password = decrypt(ENCRIPTION_KEY, self.current_account['encrypted_password'])
+        decrypted_password = decrypt(self.key, self.current_account['encrypted_password'])
         if password == decrypted_password:
             self.enable_edit_fields()
             self.load_edit_account_page(password)
@@ -472,7 +621,7 @@ class AccountManagerApp(QtWidgets.QWidget):
 
         self.show_notification("Attempting to get the cookie...", "green")
 
-        password_ciphertext = encrypt(ENCRIPTION_KEY, password)
+        password_ciphertext = encrypt(self.key, password)
         account_id = save_account(nickname, username, password_ciphertext, games, webhook, None, False)
 
         self.accounts = load_accounts()
@@ -564,7 +713,7 @@ class AccountManagerApp(QtWidgets.QWidget):
 
         self.show_notification("Attempting to get a new cookie...", "green")
 
-        self.cookie_thread = CookieThread(self.current_account['username'], decrypt(ENCRIPTION_KEY, self.current_account['encrypted_password']))
+        self.cookie_thread = CookieThread(self.current_account['username'], decrypt(self.key, self.current_account['encrypted_password']))
         self.cookie_thread.result.connect(self.handle_new_cookie_result)
         self.cookie_thread.start()
 
@@ -601,7 +750,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.show_notification("Attempting to get the cookie...", "green")
 
         if password:
-            encrypted_password = encrypt(ENCRIPTION_KEY, password)
+            encrypted_password = encrypt(self.key, password)
         else:
             encrypted_password = self.current_account['encrypted_password']
 
@@ -609,7 +758,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.accounts = load_accounts()
         self.update_account_list()
 
-        self.cookie_thread = CookieThread(username, password if password else decrypt(ENCRIPTION_KEY, self.current_account['encrypted_password']))
+        self.cookie_thread = CookieThread(username, password if password else decrypt(self.key, self.current_account['encrypted_password']))
         self.cookie_thread.result.connect(lambda cookies: self.handle_edit_cookie_result(cookies, self.current_account['id']))
         self.cookie_thread.start()
     

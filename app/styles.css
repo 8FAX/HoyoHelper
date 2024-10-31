@@ -19,7 +19,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.8.0 */
+#version 0.8.3 */
 
 
 /* General Styles */
@@ -28,6 +28,7 @@ QWidget {
     background-color: #2c2f33;
     color: #ccc;
 }
+
 
 QLabel, QLineEdit, QPushButton, QCheckBox, QListWidget, QMenu {
     font-family: Arial, sans-serif;
@@ -55,17 +56,56 @@ QListWidget::item:hover {
     background-color: #99aab5;
 }
 
-/* Button Styles */
+
 QPushButton {
-    padding: 10px 15px;
+    padding: 8px 12px; 
     background-color: #7289da;
     color: #fff;
     border: none;
     border-radius: 5px;
+    font-size: 14px; 
 }
 
 QPushButton:hover {
     background-color: #4d587c;
+}
+
+QPushButton:pressed {
+    background-color: #5a69a1;
+}
+
+QLineEdit {
+    padding: 10px;
+    border: 1px solid #99aab5;
+    border-radius: 5px;
+    background-color: #2c2f33;
+    color: #ccc;
+    font-size: 16px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #7289da;
+}
+
+QCheckBox {
+    font-size: 16px; 
+    color: #ccc;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #7289da;
+    border-radius: 3px;
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: #2c2f33;
+    border: 1px solid #99aab5;
+    border-radius: 3px;
 }
 
 QLineEdit, QComboBox, QSpinBox {
@@ -210,4 +250,66 @@ button:hover {
 /* Misc */
 .hidden {
     display: none;
+}
+
+
+/* custom page styles */
+
+
+/* #newUserPage */
+#newUserPage {
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #7289da;
+    text-align: center; 
+}
+
+#newUserPage QLabel {
+    font-size: 18px;
+    color: #e0e0e0;
+    max-width: 500px; 
+    margin: 0 auto; 
+}
+
+#newUserPage QLineEdit {
+    padding: 10px;
+    max-width: 400px; 
+    margin: 0 auto; 
+    border: 1px solid #99aab5;
+    border-radius: 5px;
+    background-color: #2c2f33;
+    color: #ccc;
+    font-size: 16px;
+}
+
+#newUserPage QLineEdit:focus {
+    border: 1px solid #7289da;
+}
+
+
+#newUserPage QPushButton {
+    padding: 8px 12px;
+    max-width: 200px; 
+    margin: 10px auto; 
+    background-color: #7289da;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+
+/* Checkbox styling */
+#newUserPage QCheckBox {
+    font-size: 16px;
+    color: #ccc;
+    max-width: 500px; 
+    margin: 10px auto; 
+}
+
+
+#newUserPage QCheckBox::indicator:unchecked {
+    background-color: #2c2f33;
+    border: 1px solid #99aab5;
+    border-radius: 3px;
 }
