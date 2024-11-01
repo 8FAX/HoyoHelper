@@ -348,9 +348,7 @@ def card_generator(data: Dict[str, str]) -> Image.Image:
     return base
 
 def data_parser(rewards: list[dict[str, str]], day_count: int, refresh_time: str, end_of_month: bool = False, checked_in: bool = False) -> Dict[str, Any]:
-    if not checked_in:
-        day_count += 1
-    else:
+    if  checked_in:
         day_count -= 1
 
     today = rewards[day_count]
