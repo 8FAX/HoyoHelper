@@ -20,7 +20,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.5.1
+#version 0.0.1
 # -------------------------------------------------------------------------------------
 
 import asyncio
@@ -29,13 +29,13 @@ from playwright.async_api import Playwright, async_playwright
 import time
 
 
-async def get_cookie(password: str, username: str, playwright: Playwright = Playwright) -> list[dict[str, any]]: 
+async def get_cookie(password: str, username: str, playwright: Playwright = Playwright) -> list[dict[str, any]]:
     """
     This Python async function uses Playwright to automate logging into a website and retrieving
     cookies.
     
     Author - Liam Scott
-    Last update - 07/19/2024
+    Last update - 11/05/2024
     @ param password (str) - The code you provided is an asynchronous function that uses Playwright to
     automate logging into a website and retrieving cookies. It seems like you were about to provide
     information about the `password` parameter but it got cut off. If you need any assistance with
@@ -56,20 +56,18 @@ async def get_cookie(password: str, username: str, playwright: Playwright = Play
     context = await browser.new_context()
     page = await context.new_page()
 
-
-    await page.goto("https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id=e202102251931481")
-    await page.locator(".components-home-assets-__sign-guide_---guide-close---2VvmzE").click()
+    await page.goto("https://genshin.hoyoverse.com/en/gift")
+    await page.get_by_role("button", name="Log In photo").click()
     time.sleep(random.randint(1, 3))
-    await page.locator(".mhy-hoyolab-account-block__avatar-icon").click()
-    await page.frame_locator("#hyv-account-frame").locator("input[type=\"text\"]").click()
+    await page.locator("#hyv-account-frame").content_frame.locator("input[name=\"username\"]").click()
     time.sleep(random.randint(1, 3))
-    await page.frame_locator("#hyv-account-frame").locator("input[type=\"text\"]").fill(username)
+    await page.locator("#hyv-account-frame").content_frame.locator("input[name=\"username\"]").fill(username)
     time.sleep(random.randint(1, 3))
-    await page.frame_locator("#hyv-account-frame").locator("input[type=\"password\"]").click()
+    await page.locator("#hyv-account-frame").content_frame.locator("input[name=\"password\"]").click()
     time.sleep(random.randint(1, 3))
-    await page.frame_locator("#hyv-account-frame").locator("input[type=\"password\"]").fill(password)
+    await page.locator("#hyv-account-frame").content_frame.locator("input[name=\"password\"]").fill(password)
     time.sleep(random.randint(1, 3))
-    await page.frame_locator("#hyv-account-frame").get_by_role("button", name="Log In").click()
+    await page.locator("#hyv-account-frame").content_frame.get_by_role("button", name="Log In").click()
     time.sleep(8)
 
     try:
@@ -87,13 +85,15 @@ async def get_cookie(password: str, username: str, playwright: Playwright = Play
             await context.close()
             await browser.close()
             return False
-        
+
     except AttributeError as e:
         print("Failed to login")
         print(e)
         await context.close()
         await browser.close()
         return False
+
+
 
 def format_cookies(cookies: list[dict[str, any]]) -> str:
     """
