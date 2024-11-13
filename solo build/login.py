@@ -267,14 +267,14 @@ def get_image(url: str) -> Image.Image:
 
 def card_generator(data: Dict[str, str]) -> Image.Image:
     base_number = random.randint(1, 9)
-    base = get_image(f'https://8fax.github.io/HoyoHelper/assets/gi/cards/{base_number}.png')
+    base = get_image(f'https://8fax.github.io/HoyoHelper/assets/gi/cards/gi_cards_{base_number}.png')
     if base is None:
         logging.error("Failed to load base card image. Loading default card.")
-        base = get_image("https://8fax.github.io/HoyoHelper/assets/gi/cards/1.png")
+        base = get_image("https://8fax.github.io/HoyoHelper/assets/gi/cards/gi_cards_1.png")
         
     base = base.convert('RGB')
 
-    frame = get_image("https://8fax.github.io/HoyoHelper/assets/other_art/UI_Frm_AlchemySimCodexPage_Bg.png")
+    frame = get_image("https://8fax.github.io/HoyoHelper/assets/frame/frame_1.png")
     if frame is None:
         logging.error("Failed to load frame image. The program will continue without the frame.")
     else:
@@ -308,7 +308,7 @@ def card_generator(data: Dict[str, str]) -> Image.Image:
 
     if data['end_of_month']:
         sticker_number: int = random.randint(2, 153)
-        sticker: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/character_stickers/{sticker_number}.png')
+        sticker: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/stickers/gi_stickers_{sticker_number}.png')
         if sticker is None:
             logging.error("Failed to load sticker image. The program will continue without the sticker.")
         else:
@@ -337,7 +337,7 @@ def card_generator(data: Dict[str, str]) -> Image.Image:
         d.text((835, 100), f"days this month!", font=ImageFont.load_default().font_variant(size=23), fill="black")
 
     portrait_number: int = random.randint(2, 32)
-    portrait: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/car_dec/{portrait_number}.png')
+    portrait: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/car_dec/gi_car_dec_{portrait_number}.png')
     if portrait is None:
         logging.error("Failed to load portrait image. The program will continue without the portrait.")
     else:
