@@ -58,3 +58,11 @@ style.py
     -high contrast
     
 
+
+
+
+errors:
+ login.py
+    INFO:root:8FA has not signed in today, proceeding to sign in...
+    ERROR:root:Failed to download image from https://cdn.hoyohelper.com/gi/car_dec/gi_car_dec_25.png: HTTPSConnectionPool(host='cdn.hoyohelper.com', port=443): Max retries exceeded with url: /gi/car_dec/gi_car_dec_25.png (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
+    ERROR:root:Failed to load portrait image. The program will continue without the portrait.

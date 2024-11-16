@@ -20,7 +20,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.7.5
+#version 0.7.6
 # -------------------------------------------------------------------------------------
 
 
@@ -63,6 +63,8 @@ def header_formater(cookie: str = False, links: Dict[str,str] = None) -> Dict[st
         "Sec-Fetch-User": "?1",
         "Upgrade-Insecure-Requests": "1",
         "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36",
+        "Source": "HoYoHelper",
+        "Version": "0.2.0"
     }
         return headers
     else:
@@ -98,22 +100,14 @@ def get_links(url: str) -> Dict[str,str]:
 def get_assets(url: str) -> Image.Image:
     headers: dict[str, str] = header_formater()
     try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        try:
-            image = Image.open(BytesIO(response.content))
-            return image
-        except UnidentifiedImageError:
-            logging.error(f"Failed to open image from assets due to unrecognized image format. link: {url}")
-            return None
-        except OSError:
-            logging.error(f"Failed to open image from assets due to an OS error. link: {url}")
-            return None
+        response = requests.get(url, headers=headers, stream=True)
+        response.raise_for_status()  
+        return Image.open(BytesIO(response.content))
     except requests.exceptions.RequestException as e:
-        logging.error(f"Request for assets failed: {e}")
+    
+        logging.error(f"Failed to download image from {url}: {e}")
         return None
-
-
+    
 def time_formater(time: str) -> str:
     input_time = int(time)
     now_time = datetime.now(timezone.utc)
@@ -252,43 +246,31 @@ def webhook(message: str, card: Image.Image = None) -> bool:
             logging.error(f"Failed to send webhook notification: {e}")
             return False
 
-def get_image(url: str) -> Image.Image:
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return Image.open(BytesIO(response.content))
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Failed to download image from {url}: {e}")
-        return None
-    except OSError as e:
-        logging.error(f"Failed to open image from {url}: {e}")
-        return None
-    
 
 def card_generator(data: Dict[str, str]) -> Image.Image:
     base_number = random.randint(1, 9)
-    base = get_image(f'https://8fax.github.io/HoyoHelper/assets/gi/cards/gi_cards_{base_number}.png')
+    base = get_assets(f'https://cdn.hoyohelper.com/gi/cards/gi_cards_{base_number}.png')
     if base is None:
         logging.error("Failed to load base card image. Loading default card.")
-        base = get_image("https://8fax.github.io/HoyoHelper/assets/gi/cards/gi_cards_1.png")
+        base = get_assets("https://cdn.hoyohelper.com/gi/cards/gi_cards_1.png")
         
     base = base.convert('RGB')
 
-    frame = get_image("https://8fax.github.io/HoyoHelper/assets/frame/frame_1.png")
+    frame = get_assets("https://cdn.hoyohelper.com/frame/frame_1.png")
     if frame is None:
         logging.error("Failed to load frame image. The program will continue without the frame.")
     else:
         base.paste(frame, (20, 68), frame)
         base.paste(frame, (20, 284), frame)
 
-    icon_1 = get_image(data['icon_1'])
+    icon_1 = get_assets(data['icon_1'])
     if icon_1:
         icon_1 = icon_1.resize((100, 100))
         if icon_1.mode != 'RGBA':
             icon_1 = icon_1.convert('RGBA')
     
     if not data['end_of_month']:
-        icon_2 = get_image(data['icon_2'])
+        icon_2 = get_assets(data['icon_2'])
         if icon_2:
             icon_2 = icon_2.resize((100, 100))
             if icon_2.mode != 'RGBA':
@@ -308,7 +290,7 @@ def card_generator(data: Dict[str, str]) -> Image.Image:
 
     if data['end_of_month']:
         sticker_number: int = random.randint(2, 153)
-        sticker: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/stickers/gi_stickers_{sticker_number}.png')
+        sticker: Image.Image = get_assets(f'https://cdn.hoyohelper.com/gi/stickers/gi_stickers_{sticker_number}.png')
         if sticker is None:
             logging.error("Failed to load sticker image. The program will continue without the sticker.")
         else:
@@ -337,7 +319,7 @@ def card_generator(data: Dict[str, str]) -> Image.Image:
         d.text((835, 100), f"days this month!", font=ImageFont.load_default().font_variant(size=23), fill="black")
 
     portrait_number: int = random.randint(2, 32)
-    portrait: Image.Image = get_assets(f'https://8fax.github.io/HoyoHelper/assets/gi/car_dec/gi_car_dec_{portrait_number}.png')
+    portrait: Image.Image = get_assets(f'https://cdn.hoyohelper.com/gi/car_dec/gi_car_dec_{portrait_number}.png')
     if portrait is None:
         logging.error("Failed to load portrait image. The program will continue without the portrait.")
     else:
@@ -495,7 +477,9 @@ def process_account(cookie: str, name: str, links: str) -> bool:
                     logging.info(f"Webhook sent for {name}.")
     return True
 
+@DeprecationWarning
 def run_account(cookie: str, name: str, games: list[str]) -> bool:
+    # This function is deprecated BUT will be fixed in the future.
 
     if not cookie or not name or not games:
         logging.error(f"Missing environment variables for account {name}.")
