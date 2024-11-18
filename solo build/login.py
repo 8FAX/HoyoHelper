@@ -20,7 +20,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.7.6
+#version 0.7.7
 # -------------------------------------------------------------------------------------
 
 
@@ -29,12 +29,14 @@ import os
 import time
 import logging
 import random
-from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError, ImageFile
+from PIL import Image, ImageDraw, ImageFont, ImageFile
 from io import BytesIO, BufferedReader
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Tuple, List, Any, Dict
 import json
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -98,15 +100,35 @@ def get_links(url: str) -> Dict[str,str]:
         return None
     
 def get_assets(url: str) -> Image.Image:
+
     headers: dict[str, str] = header_formater()
+
+    retry_strategy = Retry(
+        total=5,  
+        backoff_factor=1,  
+        status_forcelist=[500, 502, 503, 504],  
+        allowed_methods=["GET"],  
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+
+    session = requests.Session()
+    session.mount("https://", adapter)
+
     try:
-        response = requests.get(url, headers=headers, stream=True)
+        response = session.get(url, headers=headers, stream=True, timeout=(10, 30))
         response.raise_for_status()  
         return Image.open(BytesIO(response.content))
+
+    except requests.exceptions.Timeout:
+        logging.error(f"Timeout error when trying to download image from {url}.")
+    except requests.exceptions.ConnectionError:
+        logging.error(f"Connection error when trying to download image from {url}.")
     except requests.exceptions.RequestException as e:
-    
         logging.error(f"Failed to download image from {url}: {e}")
-        return None
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+    
+    return None
     
 def time_formater(time: str) -> str:
     input_time = int(time)

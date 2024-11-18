@@ -66,3 +66,7 @@ errors:
     INFO:root:8FA has not signed in today, proceeding to sign in...
     ERROR:root:Failed to download image from https://cdn.hoyohelper.com/gi/car_dec/gi_car_dec_25.png: HTTPSConnectionPool(host='cdn.hoyohelper.com', port=443): Max retries exceeded with url: /gi/car_dec/gi_car_dec_25.png (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
     ERROR:root:Failed to load portrait image. The program will continue without the portrait.
+
+    ERROR:root:Failed to download image from https://cdn.hoyohelper.com/gi/cards/gi_cards_6.png: HTTPSConnectionPool(host='cdn.hoyohelper.com', port=443): Max retries exceeded with url: /gi/cards/gi_cards_6.png (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
+
+    WARNING:urllib3.connectionpool:Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='cdn.hoyohelper.com', port=443): Read timed out. (read timeout=10)")': /gi/car_dec/gi_car_dec_3.png
