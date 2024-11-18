@@ -40,6 +40,8 @@ from urllib3.util.retry import Retry
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+logging.basicConfig(level=logging.DEBUG)
+
 def header_formater(cookie: str = False, links: Dict[str,str] = None) -> Dict[str,str]:
 
     if links:
@@ -390,7 +392,6 @@ def load_env() -> bool:
     loaded: bool = load_dotenv()
     if not loaded:
         return False
-    logging.basicConfig(level=logging.INFO)
     accounts: str = os.getenv("num_of_accounts")
     if not accounts:
         logging.error("Number of accounts not specified in environment variables.")
