@@ -40,7 +40,7 @@ from urllib3.util.retry import Retry
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def header_formater(cookie: str = False, links: Dict[str,str] = None) -> Dict[str,str]:
 
