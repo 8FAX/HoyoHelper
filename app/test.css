@@ -1,0 +1,275 @@
+/* General Styles */
+QWidget {
+    font-family: "Arial", sans-serif;
+    background-color: #122c34; /* Gunmetal */
+    color: #44cfcb; /* Robin Egg Blue */
+}
+
+QLabel, QLineEdit, QPushButton, QCheckBox, QListWidget, QMenu {
+    font-family: "Arial", sans-serif;
+    color: #44cfcb; /* Robin Egg Blue */
+}
+
+/* Navbar Styles */
+QListWidget {
+    background-color: #224870; /* Indigo Dye */
+    border: none;
+    color: #44cfcb;
+}
+
+QListWidget::item {
+    padding: 10px;
+    border-bottom: 1px solid #2a4494; /* Marian Blue */
+}
+
+QListWidget::item:selected {
+    background-color: #4ea5d9; /* Picton Blue */
+    color: #ffffff;
+}
+
+QListWidget::item:hover {
+    background-color: #2a4494; /* Marian Blue */
+}
+
+/* Button Styles */
+QPushButton {
+    padding: 8px 12px; 
+    background-color: #4ea5d9; /* Picton Blue */
+    color: #ffffff;
+    border: 1px solid #224870; /* Indigo Dye */
+    border-radius: 5px;
+    font-size: 14px; 
+    text-transform: uppercase;
+}
+
+QPushButton:hover {
+    background-color: #44cfcb; /* Robin Egg Blue */
+}
+
+QPushButton:pressed {
+    background-color: #2a4494; /* Marian Blue */
+}
+
+/* Line Edit Styles */
+QLineEdit {
+    padding: 10px;
+    border: 1px solid #224870; /* Indigo Dye */
+    border-radius: 5px;
+    background-color: #122c34; /* Gunmetal */
+    color: #44cfcb; /* Robin Egg Blue */
+    font-size: 16px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #4ea5d9; /* Picton Blue */
+}
+
+/* Checkbox Styles */
+QCheckBox {
+    font-size: 16px; 
+    color: #44cfcb; /* Robin Egg Blue */
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #4ea5d9; /* Picton Blue */
+    border-radius: 3px;
+    border: 1px solid #224870;
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: #122c34; /* Gunmetal */
+    border: 1px solid #224870;
+    border-radius: 3px;
+}
+
+/* Input Fields */
+QLineEdit, QComboBox, QSpinBox {
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #224870;
+    border-radius: 5px;
+    background-color: #122c34;
+    color: #44cfcb;
+}
+
+QLineEdit:focus, QComboBox:focus, QSpinBox:focus {
+    border: 1px solid #4ea5d9;
+}
+
+/* List Widget */
+QListWidget {
+    background-color: #224870;
+    border: 1px solid #224870;
+    border-radius: 5px;
+    outline: none;
+}
+
+QListWidget::item {
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #224870;
+    border-radius: 5px;
+}
+
+QListWidget::item:hover {
+    background-color: #2a4494; /* Marian Blue */
+}
+
+/* Menu */
+QMenu {
+    background-color: #122c34;
+    color: #44cfcb;
+}
+
+QMenu::item {
+    padding: 10px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #4ea5d9; /* Picton Blue */
+    color: #ffffff;
+}
+
+/* Notification */
+.notification {
+    color: #ffffff;
+    text-align: center;
+    font-weight: bold;
+    font-family: "Arial", sans-serif;
+    background-color: #4ea5d9; /* Picton Blue */
+    border-radius: 10px;
+    width: 300px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    transition: all 0.5s ease;
+}
+
+.notification.hidden {
+    top: -70px;
+}
+
+/* Form Styles */
+form {
+    background: #224870;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 0 20px rgba(34, 72, 112, 0.5);
+    border-radius: 5px;
+}
+
+form input[type="text"],
+form input[type="password"],
+form input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #224870;
+    border-radius: 5px;
+    background-color: #122c34;
+    color: #44cfcb;
+}
+
+form button {
+    padding: 10px 15px;
+    background-color: #4ea5d9;
+    color: #ffffff;
+    border: 1px solid #224870;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #44cfcb;
+}
+
+/* List Styles */
+.list-group {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.list-group-item {
+    background: #122c34;
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #224870; 
+    border-radius: 5px;
+    outline: none; 
+}
+
+.list-group-item:hover {
+    background: #2a4494; /* Marian Blue */
+    outline: none; 
+}
+
+/* Misc */
+.hidden {
+    display: none;
+}
+
+/* Custom Page Styles */
+#newUserPage {
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #4ea5d9;
+    text-align: center; 
+}
+
+#newUserPage QLabel {
+    font-size: 18px;
+    color: #44cfcb;
+    max-width: 500px; 
+    margin: 0 auto; 
+}
+
+#newUserPage QLineEdit {
+    padding: 10px;
+    max-width: 400px; 
+    margin: 0 auto; 
+    border: 1px solid #224870;
+    border-radius: 5px;
+    background-color: #122c34;
+    color: #44cfcb;
+    font-size: 16px;
+}
+
+#newUserPage QLineEdit:focus {
+    border: 1px solid #4ea5d9;
+}
+
+#newUserPage QPushButton {
+    padding: 8px 12px;
+    max-width: 200px; 
+    margin: 10px auto; 
+    background-color: #4ea5d9;
+    color: #ffffff;
+    border: 1px solid #224870;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+/* Checkbox styling */
+#newUserPage QCheckBox {
+    font-size: 16px;
+    color: #44cfcb;
+    max-width: 500px; 
+    margin: 10px auto; 
+}
+
+#newUserPage QCheckBox::indicator:unchecked {
+    background-color: #122c34;
+    border: 1px solid #224870;
+    border-radius: 3px;
+}

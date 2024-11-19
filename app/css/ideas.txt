@@ -1,0 +1,99 @@
+1. Solar Flare (Warm Sunset)
+Colors: Warm oranges, yellows, deep reds, and purples.
+Description: A vibrant, sunset-inspired theme with glowing, fiery tones. Perfect for a dramatic, high-energy interface.
+Mood: Energetic, bold, inspiring.
+
+2. Frost (Icy Winter)
+Colors: Icy blues, whites, and silvers.
+Description: A cold, minimalistic theme reminiscent of snow, frost, and ice. It can incorporate subtle gradients to mimic frost textures.
+Mood: Clean, serene, and minimalist.
+
+3. Retro Neon (80s Synthwave)
+Colors: Neon pinks, cyans, purples, and blacks.
+Description: A bold, high-contrast theme inspired by retro aesthetics, synthwave music, and neon lights.
+Mood: Nostalgic, futuristic, and fun.
+
+4. Earthy Tones (Natural Woodlands)
+Colors: Browns, beiges, greens, and subtle yellows.
+Description: Inspired by wood, soil, and meadows, this theme creates a cozy and grounded aesthetic, ideal for relaxed environments.
+Mood: Warm, natural, and comforting.
+
+5. Galaxy (Starlit Night)
+Colors: Deep blues, blacks, with sparkles of white, purple, and silver.
+Description: A cosmic theme inspired by the night sky, stars, and galaxies. It could include gradient backgrounds to mimic space.
+Mood: Mysterious, inspiring, and vast.
+
+6. Spring Blossom (Pastel Garden)
+Colors: Soft pastels like pink, lavender, mint green, and baby blue.
+Description: A cheerful theme inspired by cherry blossoms and spring gardens. Perfect for a light and airy look.
+Mood: Joyful, delicate, and refreshing.
+
+7. Industrial (Metal and Concrete)
+Colors: Grays, silvers, and steely blues.
+Description: A rugged, industrial-inspired theme that mimics concrete, steel, and urban structures.
+Mood: Strong, professional, and modern.
+
+8. Desert Sands (Warm and Dry)
+Colors: Sandy beiges, terracottas, and muted yellows.
+Description: A calming theme inspired by desert landscapes and sand dunes.
+Mood: Relaxing, earthy, and understated.
+
+9. Ocean Breeze (Beach and Waves)
+Colors: Light blues, sandy tans, and whites.
+Description: A breezy, beach-themed style with colors reminiscent of waves, foam, and sandy shores.
+Mood: Refreshing, calming, and light.
+
+10. Cyberpunk Glow
+Colors: Neon greens, blues, purples, and blacks.
+Description: A high-tech theme with glowing accents that feel straight out of a cyberpunk city.
+Mood: Edgy, modern, and futuristic.
+
+11. Minimalist White
+Colors: Whites, light grays, and minimal splashes of color.
+Description: A clean, uncluttered theme for users who prefer simplicity.
+Mood: Professional, sleek, and organized.
+
+12. Golden Hour
+Colors: Soft golds, peachy oranges, and light pinks.
+Description: A theme inspired by the golden hour just before sunset, with warm, glowing tones.
+Mood: Cozy, romantic, and peaceful.
+
+13. Jungle Canopy
+Colors: Dark greens, jungle browns, and vivid tropical flower hues.
+Description: A vibrant, jungle-inspired theme with earthy and floral tones.
+Mood: Lush, adventurous, and exotic.
+
+14. High Tech (Monochrome)
+Colors: Black, gray, and white with sleek lines.
+Description: A minimalist, high-tech theme designed to look futuristic and functional. Perfect for professional applications.
+Mood: Efficient, modern, and sleek.
+
+15. Autumn Glow (Harvest Colors)
+Colors: Deep oranges, reds, golds, and browns.
+Description: A warm and cozy theme inspired by fall leaves and the harvest season.
+Mood: Nostalgic, warm, and festive.
+
+16. Metallic Elegance
+Colors: Golds, silvers, and bronzes.
+Description: A premium, luxurious theme for applications aiming for a high-end aesthetic.
+Mood: Sophisticated, professional, and elegant.
+
+17. Mystic Forest (Dark Greens and Purples)
+Colors: Deep greens, purples, and blues.
+Description: A mystical theme inspired by enchanted forests and magical realms.
+Mood: Ethereal, mysterious, and magical.
+
+18. Aurora Borealis
+Colors: Greens, blues, and pinks in gradient form.
+Description: A theme inspired by the northern lights, with flowing gradients and soft glows.
+Mood: Serene, inspiring, and otherworldly.
+
+19. Vintage Sepia
+Colors: Sepia tones, browns, creams, and soft muted greens.
+Description: A nostalgic, vintage-style theme that mimics old photographs and classic aesthetics.
+Mood: Timeless, cozy, and elegant.
+
+20. Fire & Ice
+Colors: Contrasting blues and oranges.
+Description: A dramatic, high-contrast theme inspired by the duality of fire and ice.
+Mood: Dynamic, bold, and attention-grabbing.

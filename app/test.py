@@ -1,159 +1,73 @@
 import sys
-import ctypes
-from ctypes import wintypes
-import win32con
-import win32api
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
-from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QFont, QIcon
-
-class CustomTitleBar(QWidget):
-    def __init__(self, parent):
-        super().__init__()
-        self.parent = parent
-        self.layout = QHBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.title = QLabel("Custom Title Bar")
-
-        btn_size = 35
-
-        self.btn_close = QPushButton("×")
-        self.btn_close.setFixedSize(btn_size, btn_size)
-        self.btn_close.clicked.connect(self.parent.close)
-
-        self.btn_min = QPushButton("−")
-        self.btn_min.setFixedSize(btn_size, btn_size)
-        self.btn_min.clicked.connect(self.parent.showMinimized)
-
-        self.btn_max = QPushButton("□")
-        self.btn_max.setFixedSize(btn_size, btn_size)
-        self.btn_max.clicked.connect(self.maximize_restore)
-
-        self.title.setFixedHeight(35)
-        self.title.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.title)
-        self.layout.addWidget(self.btn_min)
-        self.layout.addWidget(self.btn_max)
-        self.layout.addWidget(self.btn_close)
-
-        self.setLayout(self.layout)
-
-        self.start = QPoint(0, 0)
-        self.pressing = False
-
-    def resizeEvent(self, QResizeEvent):
-        super(CustomTitleBar, self).resizeEvent(QResizeEvent)
-        self.title.setFixedWidth(self.parent.width())
-
-    def mousePressEvent(self, event):
-        self.start = self.mapToGlobal(event.pos())
-        self.pressing = True
-
-    def mouseMoveEvent(self, event):
-        if self.pressing:
-            self.end = self.mapToGlobal(event.pos())
-            self.movement = self.end - self.start
-            self.parent.setGeometry(self.mapToGlobal(self.movement).x(),
-                                    self.mapToGlobal(self.movement).y(),
-                                    self.parent.width(),
-                                    self.parent.height())
-            self.start = self.end
-
-    def mouseReleaseEvent(self, QMouseEvent):
-        self.pressing = False
-
-    def maximize_restore(self):
-        if self.parent.isMaximized():
-            self.parent.showNormal()
-            self.btn_max.setText("□")
-        else:
-            self.parent.showMaximized()
-            self.btn_max.setText("❐")
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QVBoxLayout,
+    QPushButton,
+    QLabel,
+    QLineEdit,
+    QCheckBox,
+    QListWidget,
+    QWidget,
+)
+from PyQt5.QtCore import Qt
+import os
 
 
-class MainWindow(QMainWindow):
+class ThemeTesterApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setWindowTitle("Theme Tester")
 
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        # Load the CSS
+        self.load_css()
 
-        self.title_bar = CustomTitleBar(self)
-        self.layout.addWidget(self.title_bar)
+        # Central widget
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
 
-        self.content = QWidget()
-        self.content.setStyleSheet("""
-            background-color: #f0f0f0;
-            border: 1px solid #cccccc;
-        """)
-        self.layout.addWidget(self.content)
+        # Layout
+        layout = QVBoxLayout()
 
-        self.central_widget.setLayout(self.layout)
+        items = []
 
-        self.start = QPoint(0, 0)
-        self.pressing = False
+        for i in range(10):
+            items.append(f"Item {i}")
 
-    def resizeEvent(self, QResizeEvent):
-        super(MainWindow, self).resizeEvent(QResizeEvent)
-        self.title_bar.setFixedWidth(self.width())
+        # Add sample widgets
+        self.label = QLabel("This is a QLabel")
+        self.line_edit = QLineEdit("This is a QLineEdit")
+        self.checkbox = QCheckBox("This is a QCheckBox")
+        self.button = QPushButton("This is a QPushButton")
+        self.list_widget = QListWidget()
+        self.list_widget.addItems(items)
 
-    def mousePressEvent(self, event):
-        self.start = event.globalPos()
-        self.pressing = True
+        # Add widgets to layout
+        layout.addWidget(self.label)
+        layout.addWidget(self.line_edit)
+        layout.addWidget(self.checkbox)
+        layout.addWidget(self.button)
+        layout.addWidget(self.list_widget)
 
-    def mouseMoveEvent(self, event):
-        if self.pressing:
-            self.end = event.globalPos()
-            self.movement = self.end - self.start
-            self.setGeometry(self.pos().x() + self.movement.x(),
-                             self.pos().y() + self.movement.y(),
-                             self.width(),
-                             self.height())
-            self.start = self.end
+        # Set layout to the central widget
+        central_widget.setLayout(layout)
 
-    def mouseReleaseEvent(self, QMouseEvent):
-        self.pressing = False
 
-    def nativeEvent(self, eventType, message):
-        retval, result = super(MainWindow, self).nativeEvent(eventType, message)
-        if eventType == "windows_generic_MSG":
-            msg = ctypes.wintypes.MSG.from_address(message.__int__())
-            if msg.message == win32con.WM_NCHITTEST:
-                x = win32api.LOWORD(msg.lParam) - self.frameGeometry().x()
-                y = win32api.HIWORD(msg.lParam) - self.frameGeometry().y()
-                w = self.width()
-                h = self.height()
-                lx = x < 8
-                rx = x > w - 8
-                ty = y < 8
-                by = y > h - 8
-                if lx and ty:
-                    return True, win32con.HTTOPLEFT
-                if rx and by:
-                    return True, win32con.HTBOTTOMRIGHT
-                if rx and ty:
-                    return True, win32con.HTTOPRIGHT
-                if lx and by:
-                    return True, win32con.HTBOTTOMLEFT
-                if ty:
-                    return True, win32con.HTTOP
-                if by:
-                    return True, win32con.HTBOTTOM
-                if lx:
-                    return True, win32con.HTLEFT
-                if rx:
-                    return True, win32con.HTRIGHT
-        return retval, result
+    def load_css(self):
+        css_file_path = os.path.join(os.path.dirname(__file__), 'test.css')
+        if os.path.exists(css_file_path):
+            with open(css_file_path, 'r') as f:
+                self.setStyleSheet(f.read())
+        else:
+            print('CSS file not found:', css_file_path)
+
+
+def main():
+    app = QApplication(sys.argv)
+    window = ThemeTesterApp()
+    window.show()
+    sys.exit(app.exec_())
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    mw = MainWindow()
-    mw.setGeometry(100, 100, 300, 200)
-    mw.show()
-    sys.exit(app.exec_())
+    main()

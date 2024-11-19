@@ -1,0 +1,275 @@
+/* General Styles */
+QWidget {
+    font-family: "Georgia", serif;
+    background-color: #1b3723; /* Deep forest green */
+    color: #d9e8d4; /* Soft greenish-white */
+}
+
+QLabel, QLineEdit, QPushButton, QCheckBox, QListWidget, QMenu {
+    font-family: "Georgia", serif;
+    color: #d9e8d4;
+}
+
+/* Navbar Styles */
+QListWidget {
+    background-color: #274e35; /* Dark green */
+    border: none;
+    color: #d9e8d4;
+}
+
+QListWidget::item {
+    padding: 10px;
+    border-bottom: 1px solid #3c5f48;
+}
+
+QListWidget::item:selected {
+    background-color: #4c956c; /* Fern green */
+    color: #ffffff;
+}
+
+QListWidget::item:hover {
+    background-color: #527a5e; /* Mossy green */
+}
+
+/* Button Styles */
+QPushButton {
+    padding: 8px 12px; 
+    background-color: #4c956c; /* Fern green */
+    color: #ffffff;
+    border: 1px solid #3c5f48; /* Deep green border */
+    border-radius: 5px;
+    font-size: 14px; 
+    text-transform: uppercase;
+}
+
+QPushButton:hover {
+    background-color: #527a5e; /* Mossy green */
+}
+
+QPushButton:pressed {
+    background-color: #395d44; /* Darker green */
+}
+
+/* Line Edit Styles */
+QLineEdit {
+    padding: 10px;
+    border: 1px solid #3c5f48; /* Deep green */
+    border-radius: 5px;
+    background-color: #274e35; /* Dark forest green */
+    color: #d9e8d4;
+    font-size: 16px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #4c956c; /* Fern green on focus */
+}
+
+/* Checkbox Styles */
+QCheckBox {
+    font-size: 16px; 
+    color: #d9e8d4;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #4c956c; /* Fern green */
+    border-radius: 3px;
+    border: 1px solid #3c5f48;
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: #274e35; /* Dark forest green */
+    border: 1px solid #3c5f48;
+    border-radius: 3px;
+}
+
+/* Input Fields */
+QLineEdit, QComboBox, QSpinBox {
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #3c5f48;
+    border-radius: 5px;
+    background-color: #274e35;
+    color: #d9e8d4;
+}
+
+QLineEdit:focus, QComboBox:focus, QSpinBox:focus {
+    border: 1px solid #4c956c;
+}
+
+/* List Widget */
+QListWidget {
+    background-color: #274e35;
+    border: 1px solid #3c5f48;
+    border-radius: 5px;
+    outline: none;
+}
+
+QListWidget::item {
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #3c5f48;
+    border-radius: 5px;
+}
+
+QListWidget::item:hover {
+    background-color: #527a5e;
+}
+
+/* Menu */
+QMenu {
+    background-color: #1b3723;
+    color: #d9e8d4;
+}
+
+QMenu::item {
+    padding: 10px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #4c956c;
+    color: #ffffff;
+}
+
+/* Notification */
+.notification {
+    color: #ffffff;
+    text-align: center;
+    font-weight: bold;
+    font-family: "Georgia", serif;
+    background-color: #4c956c; /* Fern green background */
+    border-radius: 10px;
+    width: 300px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    transition: all 0.5s ease;
+}
+
+.notification.hidden {
+    top: -70px;
+}
+
+/* Form Styles */
+form {
+    background: #274e35;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 0 10px rgba(60, 95, 72, 0.5);
+    border-radius: 5px;
+}
+
+form input[type="text"],
+form input[type="password"],
+form input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #3c5f48;
+    border-radius: 5px;
+    background-color: #1b3723;
+    color: #d9e8d4;
+}
+
+form button {
+    padding: 10px 15px;
+    background-color: #4c956c;
+    color: #ffffff;
+    border: 1px solid #3c5f48;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #527a5e;
+}
+
+/* List Styles */
+.list-group {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.list-group-item {
+    background: #274e35;
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #3c5f48; 
+    border-radius: 5px;
+    outline: none; 
+}
+
+.list-group-item:hover {
+    background: #527a5e;
+    outline: none; 
+}
+
+/* Misc */
+.hidden {
+    display: none;
+}
+
+/* Custom Page Styles */
+#newUserPage {
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #4c956c;
+    text-align: center; 
+}
+
+#newUserPage QLabel {
+    font-size: 18px;
+    color: #d9e8d4;
+    max-width: 500px; 
+    margin: 0 auto; 
+}
+
+#newUserPage QLineEdit {
+    padding: 10px;
+    max-width: 400px; 
+    margin: 0 auto; 
+    border: 1px solid #3c5f48;
+    border-radius: 5px;
+    background-color: #274e35;
+    color: #d9e8d4;
+    font-size: 16px;
+}
+
+#newUserPage QLineEdit:focus {
+    border: 1px solid #4c956c;
+}
+
+#newUserPage QPushButton {
+    padding: 8px 12px;
+    max-width: 200px; 
+    margin: 10px auto; 
+    background-color: #4c956c;
+    color: #ffffff;
+    border: 1px solid #3c5f48;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+/* Checkbox styling */
+#newUserPage QCheckBox {
+    font-size: 16px;
+    color: #d9e8d4;
+    max-width: 500px; 
+    margin: 10px auto; 
+}
+
+#newUserPage QCheckBox::indicator:unchecked {
+    background-color: #1b3723;
+    border: 1px solid #3c5f48;
+    border-radius: 3px;
+}

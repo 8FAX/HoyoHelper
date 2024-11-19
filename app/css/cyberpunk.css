@@ -1,0 +1,274 @@
+/* General Styles */
+QWidget {
+    font-family: Arial, sans-serif;
+    background-color: #1e1b29; /* Dark background */
+    color: #e1e1ff; /* Neon white with a purple tint */
+}
+
+QLabel, QLineEdit, QPushButton, QCheckBox, QListWidget, QMenu {
+    font-family: Arial, sans-serif;
+    color: #e1e1ff;
+}
+
+/* Navbar Styles */
+QListWidget {
+    background-color: #221d2f; /* Darker purple */
+    border: none;
+    color: #e1e1ff;
+}
+
+QListWidget::item {
+    padding: 10px;
+    border-bottom: 1px solid #302847;
+}
+
+QListWidget::item:selected {
+    background-color: #ff00ff; /* Neon pink */
+    color: #000;
+}
+
+QListWidget::item:hover {
+    background-color: #bf40bf; /* Magenta hover */
+}
+
+/* Button Styles */
+QPushButton {
+    padding: 8px 12px; 
+    background-color: #ff00ff; /* Neon pink */
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px; 
+    text-transform: uppercase;
+}
+
+QPushButton:hover {
+    background-color: #c200c2; /* Deep pink */
+}
+
+QPushButton:pressed {
+    background-color: #a100a1; /* Slightly darker pink */
+}
+
+/* Line Edit Styles */
+QLineEdit {
+    padding: 10px;
+    border: 1px solid #6d1b6d; /* Purple border */
+    border-radius: 5px;
+    background-color: #2a2438; /* Slightly lighter background */
+    color: #ffccff; /* Soft pink text */
+    font-size: 16px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #ff00ff; /* Neon pink on focus */
+}
+
+/* Checkbox Styles */
+QCheckBox {
+    font-size: 16px; 
+    color: #ffccff; /* Soft pink */
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #ff00ff; /* Neon pink */
+    border-radius: 3px;
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: #2a2438; /* Dark background */
+    border: 1px solid #6d1b6d; /* Purple border */
+    border-radius: 3px;
+}
+
+/* Input Fields */
+QLineEdit, QComboBox, QSpinBox {
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #6d1b6d;
+    border-radius: 5px;
+    background-color: #2a2438;
+    color: #ffccff;
+}
+
+QLineEdit:focus, QComboBox:focus, QSpinBox:focus {
+    border: 1px solid #ff00ff;
+}
+
+/* List Widget */
+QListWidget {
+    background-color: #2a2438;
+    border: 1px solid #6d1b6d;
+    border-radius: 5px;
+    outline: none;
+}
+
+QListWidget::item {
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #6d1b6d;
+    border-radius: 5px;
+}
+
+QListWidget::item:hover {
+    background-color: #bf40bf;
+}
+
+/* Menu */
+QMenu {
+    background-color: #221d2f;
+    color: #e1e1ff;
+}
+
+QMenu::item {
+    padding: 10px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #ff00ff;
+    color: #000;
+}
+
+/* Notification */
+.notification {
+    color: #fff;
+    text-align: center;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    background-color: rgba(255, 0, 255, 0.8); /* Neon pink background */
+    border-radius: 10px;
+    width: 300px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    transition: all 0.5s ease;
+}
+
+.notification.hidden {
+    top: -70px;
+}
+
+/* Form Styles */
+form {
+    background: #221d2f;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.2);
+    border-radius: 5px;
+}
+
+form input[type="text"],
+form input[type="password"],
+form input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #6d1b6d;
+    border-radius: 5px;
+    background-color: #2a2438;
+    color: #ffccff;
+}
+
+form button {
+    padding: 10px 15px;
+    background-color: #ff00ff;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #c200c2;
+}
+
+/* List Styles */
+.list-group {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.list-group-item {
+    background: #2a2438;
+    margin: 5px 0;
+    padding: 10px;
+    border: 1px solid #6d1b6d; 
+    border-radius: 5px;
+    outline: none; 
+}
+
+.list-group-item:hover {
+    background: #bf40bf;
+    outline: none; 
+}
+
+/* Misc */
+.hidden {
+    display: none;
+}
+
+/* Custom Page Styles */
+#newUserPage {
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #ff00ff;
+    text-align: center; 
+}
+
+#newUserPage QLabel {
+    font-size: 18px;
+    color: #e1e1ff;
+    max-width: 500px; 
+    margin: 0 auto; 
+}
+
+#newUserPage QLineEdit {
+    padding: 10px;
+    max-width: 400px; 
+    margin: 0 auto; 
+    border: 1px solid #6d1b6d;
+    border-radius: 5px;
+    background-color: #2a2438;
+    color: #ffccff;
+    font-size: 16px;
+}
+
+#newUserPage QLineEdit:focus {
+    border: 1px solid #ff00ff;
+}
+
+#newUserPage QPushButton {
+    padding: 8px 12px;
+    max-width: 200px; 
+    margin: 10px auto; 
+    background-color: #ff00ff;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+/* Checkbox styling */
+#newUserPage QCheckBox {
+    font-size: 16px;
+    color: #ffccff;
+    max-width: 500px; 
+    margin: 10px auto; 
+}
+
+#newUserPage QCheckBox::indicator:unchecked {
+    background-color: #2a2438;
+    border: 1px solid #6d1b6d;
+    border-radius: 3px;
+}
