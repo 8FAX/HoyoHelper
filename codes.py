@@ -1,11 +1,10 @@
 import requests
-import json
 import time
 
-url = "https://sg-hk4e-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?"
+BASE_URL = "https://sg-hk4e-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?"
 
 cookie = ""
-code = ["LA5E77CLZX5V", "MTLF6DKA7PQZ", "WTXV36M1J6CO0", "DEOB21CK9Y6N","SBUEMJB449D9" ]
+codes = ["EAOL18BJ8S64", "ACUI96V85FCK", "SDKLSK67TZ1X", "GSYT1Q1X", "FIBE54PL5995"]
 
 headers = {
     "Accept": "application/json, text/plain, */*",
@@ -27,7 +26,7 @@ headers = {
 
 def get_payload(code):
     return {
-        "uid": "610320530",
+        "uid": "668290053",
         "region": "os_usa",
         "lang": "en",
         "cdkey": code,
@@ -35,23 +34,28 @@ def get_payload(code):
         "sLangKey": "en-us"
     }
 
-for i in code:
-    payload = get_payload(i)
-                                                                                                
-    for key, value in payload.items():
-        url += f"&{key}={value}"
-
+def redeem_code(url, headers, code):
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         if response.headers.get("Content-Type") == "application/json":
             data = response.json()
+            print(code)
             print(data)
         else:
             print("Response is not JSON:", response.text)
     except requests.exceptions.RequestException as e:
-        print("Request failed:", e)
-    except json.JSONDecodeError:
-        print("Failed to parse JSON:", response.text)
+        print("Request failed:", e)     
 
-    time.sleep(5)
+def main():
+    for code in codes:
+        payload = get_payload(code)
+        url = BASE_URL
+        for key, value in payload.items():
+            url += f"&{key}={value}"
+        redeem_code(url, headers, code)
+        time.sleep(5)
+
+
+if __name__ == "__main__":
+    main()
