@@ -30,8 +30,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from dependencies.login import run_account
 from dependencies.pips import get_cookie, format_cookies
 from dependencies.encrypt import encrypt, decrypt, database_encrypt, database_decrypt
-from dependencies.database import setup_database, load_accounts, save_account, update_account, delete_account, load_groups, save_group, delete_group, remove_group_member, add_group_member
-from dependencies.settings import ConfigManager
+from dependencies.database import setup_database, load_accounts, save_account, update_account, delete_account, load_groups, save_group, delete_group, remove_group_member, add_group_member, check_database, check_tables
+from dependencies.settings import ConfigManager # i love the oop way of doing this, it's so much cleaner i think of moving the database stuff to a class as well could be a good idea
 
 
 
@@ -127,7 +127,8 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.X11BypassWindowManagerHint | QtCore.Qt.WindowStaysOnTopHint) #QtCore.Qt.FramelessWindowHint
         #self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
-        self.accounts = load_accounts()
+        # self.setWindowIcon(QtGui.QIcon("icon.png")) #i dont have an icon yet
+
         self.setup_ui()
         self.load_css()
         self.settings = ConfigManager()
@@ -137,9 +138,12 @@ class AccountManagerApp(QtWidgets.QWidget):
 
         if settings.get_app_first():
             self.display_page(4)
+            setup_database()
+            self.accounts = load_accounts()
         else:
             if settings.get_use_default_encryption_key():
                 self.key = settings.get_default_encryption_key()
+                self.accounts = load_accounts()
                 self.display_page(0)
                 self.nav_list.show()
                 if settings.check_valadation(self.key):
@@ -149,6 +153,7 @@ class AccountManagerApp(QtWidgets.QWidget):
                     self.display_page(6)
                     self.nav_list.hide()
             else:
+                self.accounts = load_accounts()
                 self.display_page(5)
 
         

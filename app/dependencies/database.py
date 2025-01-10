@@ -77,14 +77,6 @@ def setup_database() -> bool:
             members TEXT
         )
     ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS settings (
-            id INTEGER PRIMARY KEY,
-            encript TEXT NOT NULL,
-            rest TEXT NOT NULL,
-            first TEXT
-        )
-    ''')
     conn.commit()
     conn.close()
     return True
@@ -101,6 +93,7 @@ def load_accounts() -> List[Dict[str, Any]]:
     
     """
     if not os.path.exists(DB_NAME):
+        print("you ended up calling load_accounts without a database, this should not happen - database.py")
         setup_database()
     conn: Connection = get_connection()
     cursor: Cursor = conn.cursor()
@@ -347,78 +340,6 @@ def delete_group(id: int) -> bool:
     conn.commit()
     conn.close()
     return True
-
-def load_settings() -> List[Dict[str, Any]]:
-    """
-    The `load_settings` function loads settings information from a database table into a list of dictionaries.
-    
-    Author - Liam Scott
-    Last update - 09/5/2024
-    @returns The `load_settings` function returns a list of dictionaries representing settings. Each dictionary
-    contains the following keys: "id", "encript", "rest", and "members".
-    
-    """
-    conn: Connection = get_connection()
-    cursor: Cursor = conn.cursor()
-    cursor.execute("SELECT * FROM settings")
-    rows = cursor.fetchall()
-    conn.close()
-    settings: List[Dict[str, Any]] = []
-    for row in rows:
-        setting = {
-            "id": row[0],
-            "encript": row[1],
-            "rest": row[2],
-            "members": row[3].split(',')
-        }
-        settings.append(setting)
-    return settings
-
-def set_default_settings() -> bool:
-    """
-    The `set_default_settings` function sets default settings in a database table.
-    
-    Author - Liam Scott
-    Last update - 09/5/2024
-    @returns The function `set_default_settings` is returning a boolean value `True`.
-    
-    """
-    conn: Connection = get_connection()
-    cursor: Cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO settings (encript, rests, first)
-        VALUES (?, ?, ?)
-    ''', ("TRUE", "10", "FALSE"))
-    conn.commit()
-    conn.close()
-    return True
-
-def update_settings(val_type: str, val: str) -> bool:
-    """
-    The `update_settings` function updates settings in a database table.
-    
-    Author - Liam Scott
-    Last update - 09/5/2024
-    @param val_type (str) - The `val_type` parameter in the `update_settings` function is a string that
-    represents the type of value being updated. It could be "encript" or "rest".
-    @param val (str) - The `val` parameter in the `update_settings` function is a string that represents
-    the new value to be set for the specified type.
-    @returns The function `update_settings` is returning a boolean value `True`.
-    
-    """
-    conn: Connection = get_connection()
-    cursor: Cursor = conn.cursor()
-    if val_type == "encript":
-        cursor.execute("UPDATE settings SET encript=?", (val,))
-        return True
-    elif val_type == "rest":
-        cursor.execute("UPDATE settings SET rest=?", (val,))
-        return True
-    elif val_type == "first":
-        cursor.execute("UPDATE settings SET first=?", (val,))
-        return True
-    else:
-        return False
     
 def check_database():
     """
@@ -436,3 +357,16 @@ def check_database():
         return True
     except sqlite3.OperationalError:
         return False
+    
+
+def check_tables() -> bool:
+    conn: Connection = get_connection()
+    cursor: Cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='accounts'")
+    if cursor.fetchone() is None:
+        return False
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='groups'")
+    if cursor.fetchone() is None:
+        return False
+    conn.close()
+    return True 
