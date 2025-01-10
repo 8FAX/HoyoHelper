@@ -100,6 +100,8 @@ def load_accounts() -> List[Dict[str, Any]]:
     "passing", and "webhook".
     
     """
+    if not os.path.exists(DB_NAME):
+        setup_database()
     conn: Connection = get_connection()
     cursor: Cursor = conn.cursor()
     cursor.execute("SELECT * FROM accounts")

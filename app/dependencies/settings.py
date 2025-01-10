@@ -28,7 +28,7 @@ import secrets
 import os
 import sys
 import base64
-from abc import Tuple
+from typing import Tuple
 
 class ConfigManager:
     def __init__(self, config_file='settings.json'):

@@ -4,7 +4,7 @@ import time
 BASE_URL = "https://sg-hk4e-api.hoyoverse.com/common/apicdkey/api/webExchangeCdkey?"
 
 cookie = ""
-codes = ["EAOL18BJ8S64", "ACUI96V85FCK", "SDKLSK67TZ1X", "GSYT1Q1X", "FIBE54PL5995"]
+codes = ["FORNATLAN"]
 
 headers = {
     "Accept": "application/json, text/plain, */*",
@@ -25,6 +25,7 @@ headers = {
 }
 
 def get_payload(code):
+    # change the uid to for each acount, soon it will be automated
     return {
         "uid": "668290053",
         "region": "os_usa",
