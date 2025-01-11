@@ -38,7 +38,6 @@ from dependencies.settings import ConfigManager # i love the oop way of doing th
 NOTIFICATION_DURATION = 3000  # Duration in milliseconds
 NOTIFICATION_SPACING = 10     # Spacing between notifications
 
-
 class CookieThread(QtCore.QThread):
     result = QtCore.pyqtSignal(object)
 
@@ -139,13 +138,20 @@ class AccountManagerApp(QtWidgets.QWidget):
         if settings.get_app_first():
             self.display_page(4)
             setup_database()
-            self.accounts = load_accounts()
+            if self.check_health():
+                self.display_page(4)
+                self.nav_list.hide()
+                self.accounts = load_accounts()
         else:
             if settings.get_use_default_encryption_key():
                 self.key = settings.get_default_encryption_key()
-                self.accounts = load_accounts()
-                self.display_page(0)
-                self.nav_list.show()
+                if self.check_health():
+                    self.accounts = load_accounts()
+                    self.display_page(0)
+                    self.nav_list.show()
+                else:
+                    self.display_page(6)
+                    self.nav_list.hide()
                 if settings.check_valadation(self.key):
                     self.show_notification("Using default encryption key, key has been valadated!", "blue")
                 else:
@@ -153,9 +159,27 @@ class AccountManagerApp(QtWidgets.QWidget):
                     self.display_page(6)
                     self.nav_list.hide()
             else:
-                self.accounts = load_accounts()
-                self.display_page(5)
+                if self.check_health():
+                    self.display_page(5)
+                    self.nav_list.hide()
+                else:
+                    self.display_page(6)
+                    self.nav_list.hide()
 
+    def check_health(self) -> bool:
+        if not check_database():
+            self.show_notification("Database setup failed, please check the logs for more information.", "red")
+            self.display_page(6)
+            self.nav_list.hide()
+            return False
+
+        if not check_tables():
+            self.show_notification("Database tables setup failed, please check the logs for more information.", "red")
+            self.display_page(6)
+            self.nav_list.hide()
+            return False
+        
+        return True
         
     def load_css(self):
         css_file_path = os.path.join(os.path.dirname(__file__), 'styles.css')
