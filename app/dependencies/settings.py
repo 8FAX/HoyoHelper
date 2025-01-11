@@ -20,7 +20,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.1.1
+#version 0.1.2
 # -------------------------------------------------------------------------------------
 
 import json
@@ -33,9 +33,9 @@ from typing import Tuple
 class ConfigManager:
     def __init__(self, config_file='settings.json'):
         if os.name == 'nt':
-            self.config_file = os.path.join(os.getenv('APPDATA'), 'PasswordManager', 'data', 'settings', config_file)
+            self.config_file = os.path.join(os.getenv('APPDATA'), 'HoyoHelper', 'data', 'settings', config_file)
         else:
-            self.config_file = os.path.join(os.getenv('HOME'), '.config', 'PasswordManager', 'data', 'settings', config_file)
+            self.config_file = os.path.join(os.getenv('HOME'), '.config', 'HoyoHelper', 'data', 'settings', config_file)
         self.config_data = self.load_config()
         print(f"Configuration loaded from {self.config_file}.")
 

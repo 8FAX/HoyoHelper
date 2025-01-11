@@ -29,6 +29,8 @@ app.py
 
     add an info page that shows the user how to use the app check for updates and other info like github page wiki and contact info and credits for the app
 
+    move all global vars to a settings file and load them in the app.py file then pass them to the class constructors as needed
+
 login.py
     rethink the cdn for the background image / links.txt file as the links files keeps giving errors when being pulled from the cdn
 

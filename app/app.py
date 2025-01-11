@@ -20,7 +20,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.8.3
+#version 0.8.6
 # -------------------------------------------------------------------------------------
 
 import sys
