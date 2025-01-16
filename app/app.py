@@ -20,23 +20,25 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.8.6
+#version 0.8.7
 # -------------------------------------------------------------------------------------
 
 import sys
 import os
 import asyncio
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui 
 from dependencies.login import run_account
 from dependencies.pips import get_cookie, format_cookies
-from dependencies.encrypt import encrypt, decrypt, database_encrypt, database_decrypt
-from dependencies.database import setup_database, load_accounts, save_account, update_account, delete_account, load_groups, save_group, delete_group, remove_group_member, add_group_member, check_database, check_tables
-from dependencies.settings import ConfigManager # i love the oop way of doing this, it's so much cleaner i think of moving the database stuff to a class as well could be a good idea
+from dependencies.encrypt import encrypt, decrypt, database_encrypt, database_decrypt # this will be the next thing to be transfered to the OOP 
+from dependencies.database import DatabaseManager
+from dependencies.settings import ConfigManager 
 
 
 
 NOTIFICATION_DURATION = 3000  # Duration in milliseconds
 NOTIFICATION_SPACING = 10     # Spacing between notifications
+INFO_DB_PATH = "info.db"
+SETTINS_PATH = "settings.json"
 
 class CookieThread(QtCore.QThread):
     result = QtCore.pyqtSignal(object)
@@ -130,23 +132,27 @@ class AccountManagerApp(QtWidgets.QWidget):
 
         self.setup_ui()
         self.load_css()
-        self.settings = ConfigManager()
+
+        self.settings = ConfigManager(SETTINS_PATH)
+        self.database = DatabaseManager(INFO_DB_PATH)
+
+        database = self.database
 
         settings = self.settings
         settings.load_config()
 
         if settings.get_app_first():
             self.display_page(4)
-            setup_database()
+            database.setup_database()
             if self.check_health():
                 self.display_page(4)
                 self.nav_list.hide()
-                self.accounts = load_accounts()
+                self.accounts = database.load_accounts()
         else:
             if settings.get_use_default_encryption_key():
                 self.key = settings.get_default_encryption_key()
                 if self.check_health():
-                    self.accounts = load_accounts()
+                    self.accounts = database.load_accounts()
                     self.display_page(0)
                     self.nav_list.show()
                 else:
@@ -167,13 +173,14 @@ class AccountManagerApp(QtWidgets.QWidget):
                     self.nav_list.hide()
 
     def check_health(self) -> bool:
-        if not check_database():
+        database = self.database
+        if not database.check_database():
             self.show_notification("Database setup failed, please check the logs for more information.", "red")
             self.display_page(6)
             self.nav_list.hide()
             return False
 
-        if not check_tables():
+        if not database.check_tables():
             self.show_notification("Database tables setup failed, please check the logs for more information.", "red")
             self.display_page(6)
             self.nav_list.hide()
@@ -638,6 +645,7 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.account_listbox.addItem(f"{account['nickname']} ({status})")
 
     def save_account_update(self):
+        database = self.database
         nickname = self.nickname_entry.text()
         username = self.username_entry.text()
         password = self.password_entry.text()
@@ -651,9 +659,9 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.show_notification("Attempting to get the cookie...", "green")
 
         password_ciphertext = encrypt(self.key, password)
-        account_id = save_account(nickname, username, password_ciphertext, games, webhook, None, False)
+        account_id = database.save_account(nickname, username, password_ciphertext, games, webhook, None, False)
 
-        self.accounts = load_accounts()
+        self.accounts = database.load_accounts()
         self.update_account_list()
         self.clear_account_inputs()
         self.display_page(0)
@@ -663,6 +671,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.cookie_thread.start()
 
     def handle_cookie_result(self, cookies, account_id):
+        database = self.database
         account = next((acc for acc in self.accounts if acc['id'] == account_id), None)
         if not account:
             self.show_notification("No account found with the provided ID.", "red")
@@ -677,10 +686,10 @@ class AccountManagerApp(QtWidgets.QWidget):
             passing = False
             self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
 
-        update_account(account['id'], account['nickname'], account['username'], account['encrypted_password'], 
+        database.update_account(account['id'], account['nickname'], account['username'], account['encrypted_password'], 
                     account['games'], account['webhook'], cookie, passing)
 
-        self.accounts = load_accounts()
+        self.accounts = database.load_accounts()
         self.update_account_list()
 
     def encription_toggle(self):
@@ -750,15 +759,16 @@ class AccountManagerApp(QtWidgets.QWidget):
         pass
 
     def handle_new_cookie_result(self, cookies):
+        database = self.database
         if cookies:
             self.current_account['cookie'] = cookies
-            update_account(self.current_account['id'], self.current_account['nickname'], self.current_account['username'],
+            database.update_account(self.current_account['id'], self.current_account['nickname'], self.current_account['username'],
                            self.current_account['encrypted_password'], self.current_account['games'], self.current_account['webhook'], cookies, True)
             self.show_notification("New cookie obtained successfully!", "green")
         else:
             self.show_notification("Failed to get the new cookie. Please check the username and password.", "red")
 
-        self.accounts = load_accounts()
+        self.accounts = database.load_accounts()
         self.update_account_list()
 
     def navigate_to_edit_account_page(self):
@@ -766,6 +776,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.reset_edit_account_page()
 
     def save_account_info(self):
+        database = self.database
         nickname = self.edit_nickname_entry.text()
         username = self.edit_username_entry.text()
         password = self.edit_password_entry.text()
@@ -783,8 +794,8 @@ class AccountManagerApp(QtWidgets.QWidget):
         else:
             encrypted_password = self.current_account['encrypted_password']
 
-        update_account(self.current_account['id'], nickname, username, encrypted_password, games, webhook, None, False)
-        self.accounts = load_accounts()
+        database.update_account(self.current_account['id'], nickname, username, encrypted_password, games, webhook, None, False)
+        self.accounts = database.load_accounts()
         self.update_account_list()
 
         self.cookie_thread = CookieThread(username, password if password else decrypt(self.key, self.current_account['encrypted_password']))
@@ -792,6 +803,7 @@ class AccountManagerApp(QtWidgets.QWidget):
         self.cookie_thread.start()
     
     def handle_edit_cookie_result(self, cookies, account_id):
+        database = self.database
         account = next((acc for acc in self.accounts if acc['id'] == account_id), None)
         if not account:
             self.show_notification("No account found with the provided ID.", "red")
@@ -807,19 +819,20 @@ class AccountManagerApp(QtWidgets.QWidget):
             self.show_notification("Failed to get the cookie. Please check the username and password.", "red")
 
         # Update the account in the database
-        update_account(account['id'], account['nickname'], account['username'], account['encrypted_password'], 
+        database.update_account(account['id'], account['nickname'], account['username'], account['encrypted_password'], 
                     account['games'], account['webhook'], cookie, passing)
 
         # Refresh the account list
-        self.accounts = load_accounts()
+        self.accounts = database.load_accounts()
         self.update_account_list()
 
 
     def delete_account(self):
+        database = self.database
         reply = QtWidgets.QMessageBox.question(self, 'Delete Account', "Are you sure you want to delete this account?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
         if reply == QtWidgets.QMessageBox.Yes:
-            delete_account(self.current_account['id'])
-            self.accounts = load_accounts()
+            database.delete_account(self.current_account['id'])
+            self.accounts = database.load_accounts()
             self.update_account_list()
             self.show_notification("Account deleted successfully!", "red")
             self.display_page(0)
