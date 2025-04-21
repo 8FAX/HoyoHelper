@@ -5,6 +5,7 @@ accounts.db
 /.conda
 info.db
 settings.json
+cookies.txt
 
 # Byte-compiled / optimized / DLL files
 /app/dependencies/__pycache__
