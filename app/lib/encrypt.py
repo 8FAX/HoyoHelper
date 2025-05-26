@@ -20,7 +20,7 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.1.4
+#version 0.1.5
 # -------------------------------------------------------------------------------------
 
 import os
@@ -130,7 +130,7 @@ def decrypt(password: str, encrypted_data: bytes) -> str:
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=backend)
     decryptor = cipher.decryptor()
     
-    print(f"Decrypting with salt: {salt.hex()}, iv: {iv.hex()}, and derived key: {key.hex()}")
+    #print(f"Decrypting with salt: {salt.hex()}, iv: {iv.hex()}, and derived key: {key.hex()}")
 
     try:
         padded_plaintext = decryptor.update(ciphertext) + decryptor.finalize()
@@ -162,7 +162,7 @@ def database_decrypt(key: str, ciphertext: bytes) -> str:
     plaintext as a string.
     
     """
-    from app.dependencies.database import load_accounts, update_account
+    from .database import load_accounts, update_account
     backend = default_backend()
     key = key.encode('utf-8')
     key = key.ljust(32)[:32]
@@ -213,7 +213,7 @@ def database_encrypt(key: str) -> str:
     plaintext as a string.
     
     """
-    from app.dependencies.database import load_accounts, update_account
+    from .database import load_accounts, update_account
     backend = default_backend()
     key = key.encode('utf-8')
     key = key.ljust(32)[:32]

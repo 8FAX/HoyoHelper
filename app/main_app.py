@@ -27,11 +27,11 @@ import sys
 import os
 import asyncio
 from PyQt5 import QtWidgets, QtCore, QtGui 
-from dependencies.login import run_account
-from dependencies.pips import get_cookie, format_cookies
-from dependencies.encrypt import encrypt, decrypt, database_encrypt, database_decrypt # this will be the next thing to be transfered to the OOP 
-from dependencies.database import DatabaseManager
-from dependencies.settings import ConfigManager 
+# from lib.login import run_account #needs to be swapped to the new login system
+from app.lib.cookie import get_cookie, format_cookies
+from lib.encrypt import encrypt, decrypt, database_encrypt, database_decrypt # this will be the next thing to be transfered to the OOP 
+from lib.database import DatabaseManager
+from lib.settings import ConfigManager 
 
 
 

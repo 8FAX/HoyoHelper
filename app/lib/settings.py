@@ -23,6 +23,8 @@
 #version 0.1.2
 # -------------------------------------------------------------------------------------
 
+FILE_VERSION = "0.1.0"
+
 import json
 import secrets
 import os
@@ -31,21 +33,28 @@ import base64
 from typing import Tuple
 
 class ConfigManager:
-    def __init__(self, config_file='settings.json'):
-        if os.name == 'nt':
-            self.config_file = os.path.join(os.getenv('APPDATA'), 'HoyoHelper', 'data', 'settings', config_file)
-        else:
-            self.config_file = os.path.join(os.getenv('HOME'), '.config', 'HoyoHelper', 'data', 'settings', config_file)
-        self.config_data = self.load_config()
-        print(f"Configuration loaded from {self.config_file}.")
+    def __init__(self, config_file='settings.json', runtime='os'):
+        
+        if runtime == 'os':
+            if os.name == 'nt':
+                self.config_file = os.path.join(os.getenv('APPDATA'), 'HoyoHelper', 'data', 'settings', config_file)
+            else:
+                self.config_file = os.path.join(os.getenv('HOME'), '.config', 'HoyoHelper', 'data', 'settings', config_file)
+            self.config_data = self.load_config()
+            print(f"Configuration loaded from {self.config_file}.")
 
-        #dev only
-        if os.name == 'nt':
-            os.system(f"start notepad {self.config_file}")
-        elif sys.platform == 'darwin': 
-            os.system(f"open {self.config_file}")
-        else:
-            os.system(f"xdg-open {self.config_file}")
+            #dev only
+            if os.name == 'nt':
+                os.system(f"start notepad {self.config_file}")
+            elif sys.platform == 'darwin': 
+                os.system(f"open {self.config_file}")
+            else:
+                os.system(f"xdg-open {self.config_file}")
+        
+        elif runtime == 'docker':
+            self.config_file = os.path.join('/app', 'data', 'settings', config_file)
+            self.config_data = self.load_config()
+            print(f"Configuration loaded from {self.config_file}.")
 
     def load_config(self):
         try:
@@ -218,7 +227,7 @@ class ConfigManager:
         return True
     
     def check_valadation(self, key: str) -> bool:
-        from dependencies.encrypt import decrypt
+        from lib.encrypt import decrypt
 
         encrypted_validation, salt = self.get_valadation()
         

@@ -20,8 +20,10 @@
 # do not remove this notice
 
 # This file is part of HoYo Helper.
-#version 0.0.1
+#version 0.1.3
 # -------------------------------------------------------------------------------------
+
+# THIS FILE WILL BE DEPRECATED IN THE FUTURE, THERE WILL BE A PUSH TO UNIFY THE 2 COOKIE GETTERS
 
 import asyncio
 import random

@@ -1,6 +1,6 @@
 working on:
 
-databse.py / settings.py
+database.py / settings.py
 
     check_database()
 
@@ -17,11 +17,11 @@ app.py
 
     setup_new_user_ui()
 
-    encription_toggle()
+    encryption_toggle()
     database_path()
     rest_time()
 
-    Backround for main window not working well with the rest of the app
+    Background for main window not working well with the rest of the app
 
     account on home page is not deselected when switching to another page
 
@@ -72,3 +72,8 @@ errors:
     ERROR:root:Failed to download image from https://cdn.hoyohelper.com/gi/cards/gi_cards_6.png: HTTPSConnectionPool(host='cdn.hoyohelper.com', port=443): Max retries exceeded with url: /gi/cards/gi_cards_6.png (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))
 
     WARNING:urllib3.connectionpool:Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='cdn.hoyohelper.com', port=443): Read timed out. (read timeout=10)")': /gi/car_dec/gi_car_dec_3.png
+
+
+
+My Playwright script needs more work. There was an anti-bot challenge, and that's a problem. I need to find a way to bypass it or solve it automatically.
+and there was also an email verification that i need to handle, i need to find a way to automate that as well 
