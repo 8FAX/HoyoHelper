@@ -22,7 +22,7 @@
 # This file is part of HoYo Helper.
 # -------------------------------------------------------------------------------------
 
-FILE_VERSION = "0.1.0"
+FILE_VERSION = "0.1.1"
 
 import os
 import logging
@@ -80,6 +80,19 @@ GAME_LINKS_MAP = {
 
 class WindolessApp:
     def __init__(self):
+        """
+        The `__init__` function initializes a `WindolessApp` instance by setting up various managers,
+        handling exceptions, loading configurations, and initializing necessary attributes.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        
+        """
         logger.info("Initializing WindolessApp...")
         self.runtime_environment = os.getenv('APP_RUNTIME', 'os').lower()
         
@@ -119,6 +132,42 @@ class WindolessApp:
         logger.info("WindolessApp initialized successfully.")
 
     async def _get_and_update_cookie_if_needed_async(self, account: Account, account_webhook_url: Optional[str]) -> Optional[str]:
+        """
+        This async function checks if a daily login cookie exists for an account, generates one if
+        needed, and updates the account information accordingly.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        @ param account (Account)  - The code you provided is an asynchronous function that checks if a
+        daily login cookie exists for a given account. If the cookie does not exist, it attempts to
+        generate a new one by decrypting the password, obtaining a raw cookie, formatting the cookie,
+        and updating the account information with the new cookie.
+        
+        .-.-.-.
+        
+        @ param account_webhook_url (Optional[str])  - The `account_webhook_url` parameter in the
+        provided code is a URL that represents the webhook associated with a specific user account. This
+        URL is used to send notifications or messages related to the account, such as error messages,
+        information updates, or alerts. The code includes logic to handle webhook notifications for
+        
+        .-.-.-.
+        
+        
+        
+        @ returns The function `_get_and_update_cookie_if_needed_async` returns the formatted cookies
+        for the account after generating and formatting them. If successful, it updates the account
+        information in the database and returns the formatted cookies. If any errors occur during the
+        process, it logs the error messages and returns `None`.
+        
+        .-.-.-.
+        
+        
+        """
         nickname = account["nickname"]
         current_cookie_daily_login = account.get("cookie_daily_login")
 
@@ -207,6 +256,34 @@ class WindolessApp:
 
 
     async def run_account_async(self, account: Account):
+        """
+        This Python async function processes games for a given account, handling various scenarios and
+        logging events along the way.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        @ param account (Account)  - The `run_account_async` function takes an `account` parameter of
+        type `Account`. This parameter is used to process various tasks related to the account, such as
+        retrieving account information, handling webhooks, processing games, and sending notifications.
+        The function performs operations based on the data provided in the `
+        
+        .-.-.-.
+        
+        
+        
+        @ returns The `run_account_async` function returns `None` as there is no explicit return
+        statement at the end of the function. The function performs various processing tasks for an
+        account asynchronously, but it does not return any specific value.
+        
+        .-.-.-.
+        
+        
+        """
         nickname = account.get("nickname", "UnknownAccount")
         account_id = account.get("id", "N/A")
         logger.info(f"--- Running for account: {nickname} (ID: {account_id}) ---")
@@ -280,6 +357,28 @@ class WindolessApp:
 
 
     async def main_async(self):
+        """
+        The `main_async` function processes accounts daily, handling loading, running, and error
+        reporting for each account.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        
+        
+        @ returns The `main_async` function is an asynchronous function that processes accounts in a
+        Windoless App. It loads accounts from a database, processes them one by one using the
+        `run_account_async` method, and sends appropriate log messages and webhooks for different
+        scenarios.
+        
+        .-.-.-.
+        
+        
+        """
         logger.info("Starting Windoless App daily processing...")
         
 
@@ -325,6 +424,8 @@ class WindolessApp:
         except WebhookError as e: logger.warning(f"Webhook failed for completion msg: {e}")
 
 
+# The above Python code snippet is a part of a script that handles the startup of an application. Here
+# is a breakdown of what the code is doing:
 if __name__ == "__main__":
     try:
         app = WindolessApp()

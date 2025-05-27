@@ -23,7 +23,7 @@
 #version 0.1.2
 # -------------------------------------------------------------------------------------
 
-FILE_VERSION = "0.1.0"
+FILE_VERSION = "0.1.1"
 
 import json
 import secrets
@@ -34,6 +34,30 @@ from typing import Tuple
 
 class ConfigManager:
     def __init__(self, config_file='settings.json', runtime='os'):
+        """
+        The function initializes a configuration file path based on the runtime environment (OS or
+        Docker) and loads the configuration data.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        @ param config_file () settings.json - The `config_file` parameter is a string that specifies
+        the name of the configuration file to be loaded. By default, it is set to 'settings.json'.
+        
+        .-.-.-.
+        
+        @ param runtime () os - The `runtime` parameter in the `__init__` method is used to determine
+        the runtime environment in which the configuration file should be loaded. It can have two
+        possible values:
+        
+        .-.-.-.
+        
+        
+        """
         
         if runtime == 'os':
             if os.name == 'nt':
@@ -57,6 +81,28 @@ class ConfigManager:
             print(f"Configuration loaded from {self.config_file}.")
 
     def load_config(self):
+        """
+        The function `load_config` attempts to load a configuration file in JSON format, and if the file
+        is not found, it loads default settings and generates an encryption key.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        
+        
+        @ returns The `load_config` method is returning the configuration settings loaded from a JSON
+        file. If the JSON file is not found (FileNotFoundError), it will load default settings, set a
+        default encryption key, and then recursively call `load_config` again to try loading the
+        configuration settings.
+        
+        .-.-.-.
+        
+        
+        """
         try:
             with open(self.config_file, 'r') as json_file:
                 return json.load(json_file)
@@ -66,6 +112,18 @@ class ConfigManager:
                 return self.load_config()
 
     def save_config(self):
+        """
+        The `save_config` function saves configuration data to a JSON file with restricted permissions.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        
+        """
         config_dir = os.path.dirname(self.config_file)
         if not os.path.exists(config_dir):
             os.makedirs(config_dir)
@@ -178,6 +236,19 @@ class ConfigManager:
     # other methods
 
     def load_defaults(self):
+        """
+        The function `load_defaults` initializes default configuration data for the application and
+        saves the configuration while generating an encryption key.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        
+        """
         self.config_data = {
             "Version": "1.0",
             "Database": {
@@ -202,10 +273,41 @@ class ConfigManager:
         self.generate_encryption_key()
 
     def reset_defaults(self):
+        """
+        The function `reset_defaults` removes the configuration file and loads default settings.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        
+        """
         os.remove(self.config_file)
         self.load_defaults()
 
     def generate_encryption_key(self):
+        """
+        The function generates a random encryption key and sets it as the default encryption key.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        
+        
+        @ returns The `generate_encryption_key` method is returning the randomly generated encryption
+        key as a hexadecimal string of length 64 characters (32 bytes).
+        
+        .-.-.-.
+        
+        
+        """
         key = secrets.token_hex(32)  
 
         self.set_default_encryption_key(key)
@@ -213,6 +315,27 @@ class ConfigManager:
         return key
     
     def check_database_path(self) -> bool:
+        """
+        The function `check_database_path` checks if the specified database path is valid by verifying
+        the existence of specific database files.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        
+        
+        @ returns The `check_database_path` method returns a boolean value. It returns `True` if the
+        database path is not empty and if either the file "accounts.db" or "info.db" exists in the
+        specified database path. Otherwise, it returns `False`.
+        
+        .-.-.-.
+        
+        
+        """
         if self.get_database_path() == "":
             return False
         if not os.path.exists(self.get_database_path()+"accounts.db") and not os.path.exists(self.get_database_path()+"info.db"):
@@ -220,6 +343,24 @@ class ConfigManager:
         return True
 
     def check_encryption_default_key(self) -> bool:
+        """
+        The function `check_encryption_default_key` checks if the default encryption key is set or not.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        
+        
+        @ returns The function `check_encryption_default_key` returns a boolean value.
+        
+        .-.-.-.
+        
+        
+        """
         if self.get_use_default_encryption_key():
             return False
         if self.get_default_encryption_key() == "_KEY_DID_NOT_SET_":
@@ -227,6 +368,33 @@ class ConfigManager:
         return True
     
     def check_valadation(self, key: str) -> bool:
+        """
+        This function checks the validation of a key by decrypting an encrypted validation token and
+        comparing it to a truth value.
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        Author - Liam Scott
+        Last update - 05/26/2025
+        
+        .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+        
+        @ param key (str)  - The `key` parameter in the `check_validation` method is expected to be a
+        string. It is used as a decryption key to decrypt an encrypted validation token.
+        
+        .-.-.-.
+        
+        
+        
+        @ returns The `check_validation` method returns a boolean value. It returns `True` if the
+        decrypted validation matches the validation truth obtained from `self.get_validation_truth()`,
+        and it returns `False` in case of any exceptions such as Unicode decoding error or other value
+        errors during decryption.
+        
+        .-.-.-.
+        
+        
+        """
         from lib.encrypt import decrypt
 
         encrypted_validation, salt = self.get_valadation()

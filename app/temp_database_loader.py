@@ -32,7 +32,26 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - [%
 logger = logging.getLogger("TempDBLoader")
 
 def open_file_explorer(path: str):
-    """Opens the file explorer to the specified path."""
+    """
+    The function `open_file_explorer` opens the file explorer at a specified path based on the operating
+    system.
+    
+    .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+    
+    Author - Liam Scott
+    Last update - 05/26/2025
+    
+    .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+    
+    @ param path (str)  - The `open_file_explorer` function takes a `path` parameter, which is a string
+    representing the file or directory path to be opened in the file explorer. The function attempts to
+    open the file explorer at the specified path based on the operating system in use (Windows, macOS,
+    or Linux).
+    
+    .-.-.-.
+    
+    
+    """
     try:
         dir_path = os.path.dirname(path) if os.path.isfile(path) else path
         if not os.path.exists(dir_path):
@@ -65,6 +84,20 @@ def open_file_explorer(path: str):
 
 
 async def main_async():
+    """
+    The `main_async` function in this Python script handles the process of adding an account with
+    specified details to a database, including tasks like generating cookies, encrypting passwords, and
+    saving the account data.
+    
+    .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+    
+    Author - Liam Scott
+    Last update - 05/26/2025
+    
+    .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+    
+    
+    """
     parser = argparse.ArgumentParser(description="Temporary Database Loader for HoYo Helper Accounts.")
     parser.add_argument("--email", required=True, help="Account email/username for login.")
     parser.add_argument("--password", required=True, help="Account password for login.")
