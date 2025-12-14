@@ -14,3 +14,4 @@ __pycache__/
 *$py.class
 *.pyc
 /data
+app/headless_app.py - Shortcut.lnk

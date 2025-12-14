@@ -67,13 +67,13 @@ class ConfigManager:
             self.config_data = self.load_config()
             print(f"Configuration loaded from {self.config_file}.")
 
-            #dev only
-            if os.name == 'nt':
-                os.system(f"start notepad {self.config_file}")
-            elif sys.platform == 'darwin': 
-                os.system(f"open {self.config_file}")
-            else:
-                os.system(f"xdg-open {self.config_file}")
+            # #dev only
+            # if os.name == 'nt':
+            #     os.system(f"start notepad {self.config_file}")
+            # elif sys.platform == 'darwin': 
+            #     os.system(f"open {self.config_file}")
+            # else:
+            #     os.system(f"xdg-open {self.config_file}")
         
         elif runtime == 'docker':
             self.config_file = os.path.join('/app', 'data', 'settings', config_file)
