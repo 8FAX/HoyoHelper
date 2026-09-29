@@ -28,12 +28,9 @@ Like DatabaseManager, ConfigManager resolves its own path from the ambient
 environment, so the autouse `isolated_data_dir` fixture keeps every test inside
 a throwaway directory.
 
-The last two tests in this file document a real defect found while writing the
-suite: on a fresh install the validation token is the literal placeholder
-string "ciphercheck", which is not valid base64, so `get_valadation()` raises
-instead of returning a safe empty result. They are marked `xfail(strict=False)`
-so they start passing the moment the bug is fixed, and will loudly fail
-(XPASS -> failure) if someone "fixes" the test instead of the code.
+The tests at the end of this file cover first-run and legacy-install behaviour,
+where the stored validation token is absent or was written by an older build
+that used a non-base64 placeholder.
 """
 
 import base64
@@ -158,25 +155,44 @@ def test_reset_defaults_rebuilds_the_file(config):
     assert reloaded.get_app_style() == "dark"
 
 
-# ------------------------------------------------------- known defects (xfail)
+# --------------------------------------------- first-run / legacy-install behaviour
 
 
-@pytest.mark.xfail(
-    strict=False,
-    reason="Known bug: load_defaults() stores the placeholder 'ciphercheck', which is "
-    "not valid base64, so get_valadation() raises binascii.Error instead of "
-    "returning empty bytes.",
-)
 def test_get_valadation_on_fresh_install_returns_empty(config):
+    """A fresh install has no validation token yet, and must report that, not raise."""
     config.load_defaults()
     assert config.get_valadation() == (b"", b"")
 
 
-@pytest.mark.xfail(
-    strict=False,
-    reason="Known bug: check_valadation() calls get_valadation() unguarded, so on a "
-    "fresh install it raises binascii.Error instead of returning False.",
-)
 def test_check_valadation_on_fresh_install_returns_false(config):
+    """With no token stored, the key cannot be validated yet -- that is False, not an error."""
     config.load_defaults()
     assert config.check_valadation(config.get_default_encryption_key()) is False
+
+
+def test_get_valadation_survives_a_legacy_placeholder_install(config):
+    """Installs created before the fix have the literal string "ciphercheck" persisted.
+
+    That is not valid base64, so decoding it used to raise binascii.Error and break the
+    new-user flow for anyone who had already run an older build. Those users' config files
+    still contain the placeholder, so it has to be handled on read, not just on write.
+    """
+    config.load_defaults()
+    config.config_data["App"]["valadation"] = "ciphercheck"
+    config.config_data["App"]["salt"] = "ciphercheck"
+    config.save_config()
+
+    assert config.get_valadation() == (b"", b"")
+    assert config.get_salt() == b""
+    assert config.check_valadation(config.get_default_encryption_key()) is False
+
+
+def test_fresh_install_persists_empty_tokens_not_a_placeholder(config):
+    """The default itself must stay base64-decodable, so new installs start clean."""
+    config.load_defaults()
+
+    with open(config.config_file, encoding="utf-8") as handle:
+        raw = json.load(handle)
+
+    assert raw["App"]["valadation"] == ""
+    assert raw["App"]["salt"] == ""
