@@ -30,13 +30,13 @@ import time
 import asyncio
 from typing import Optional
 
-from lib.database import DatabaseManager, Account
-from lib.login_manager import LoginManager
-from lib.webhook_manager import WebhookManager
-from lib.exceptions import HoyoHelperError, WebhookError
-from lib.cookie import get_cookie as get_daily_login_cookie_async, format_cookies
-from lib.encrypt import decrypt
-from lib.settings import ConfigManager
+from app.lib.database import DatabaseManager, Account
+from app.lib.login_manager import LoginManager
+from app.lib.webhook_manager import WebhookManager
+from app.lib.exceptions import HoyoHelperError, WebhookError
+from app.lib.cookie import get_cookie as get_daily_login_cookie_async, format_cookies
+from app.lib.encrypt import decrypt
+from app.lib.settings import ConfigManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - [%(name)s] %(message)s")
 logger = logging.getLogger(__name__)

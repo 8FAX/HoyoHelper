@@ -8,23 +8,23 @@ import logging
 import asyncio
 from typing import List, Optional
 
-project_root = os.path.dirname(os.path.abspath(__file__))
-app_path = os.path.join(project_root, "app")
-if app_path not in sys.path:
-    sys.path.insert(0, app_path)
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Allow running this file directly (``python app/temp_database_loader.py``) from a
+# checkout by putting the project root on the import path. Package-relative imports
+# are used everywhere else, so this is the only place that needs the shim.
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 try:
-    from lib.database import DatabaseManager, Account
-    from lib.cookie import get_cookie as get_daily_login_cookie_async, format_cookies as format_daily_cookies
-    from lib.cookie_for_codes import get_cookie as get_codes_cookie_async, format_cookies as format_codes_cookies
-    from lib.encrypt import encrypt
-    from lib.settings import ConfigManager
+    from app.lib.database import DatabaseManager, Account
+    from app.lib.cookie import get_cookie as get_daily_login_cookie_async, format_cookies as format_daily_cookies
+    from app.lib.cookie_for_codes import get_cookie as get_codes_cookie_async, format_cookies as format_codes_cookies
+    from app.lib.encrypt import encrypt
+    from app.lib.settings import ConfigManager
     from playwright.async_api import async_playwright
 except ImportError as e:
     print(f"Error importing necessary modules: {e}")
-    print("Please ensure this script is in the project root or paths are correctly set.")
+    print("Please ensure this script is inside the project checkout and dependencies are installed.")
     print("Required structure: project_root/app/lib/...")
     sys.exit(1)
 
