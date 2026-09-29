@@ -395,7 +395,7 @@ class ConfigManager:
         
         
         """
-        from lib.encrypt import decrypt
+        from .encrypt import decrypt
 
         encrypted_validation, salt = self.get_valadation()
         

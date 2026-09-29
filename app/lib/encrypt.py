@@ -30,7 +30,6 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
-from typing import Tuple
 
 def derive_key(password: str, salt: bytes) -> bytes:
     """
@@ -65,22 +64,20 @@ def derive_key(password: str, salt: bytes) -> bytes:
     return key
 
 
-def encrypt(password: str, plaintext: str) -> Tuple[bytes, bytes]:
+def encrypt(password: str, plaintext: str) -> bytes:
     """
-    The function encrypts plaintext using AES encryption with a given password and returns the salt, IV,
-    and ciphertext.
+    The function encrypts plaintext using AES-CBC with a key derived from the given password, and
+    returns the salt, IV and ciphertext concatenated into a single blob.
     
     Author - Liam Scott
     Last update - 10/28/2024
     
     @ param password (str)  - The `password` parameter is a string that will be used to derive a key for
     encryption.
-    @ param plaintext (str)  - The `encrypt` function you provided seems to be encrypting the plaintext
-    using AES encryption in CBC mode with a randomly generated salt and IV. The key is derived from the
-    password using a function `derive_key` which is not shown in the code snippet.
+    @ param plaintext (str)  - The text to encrypt, encoded as UTF-8 before encryption.
     
-    @ returns The `encrypt` function returns a tuple containing two bytes objects: the `salt`, `iv`, and
-    `ciphertext` concatenated together.
+    @ returns A single `bytes` blob laid out as `salt(16) || iv(16) || ciphertext`, which is the
+    format `decrypt` expects and what gets persisted in the database.
     
     """
     backend = default_backend()

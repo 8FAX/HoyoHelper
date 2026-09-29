@@ -29,9 +29,9 @@ import asyncio
 from PyQt5 import QtWidgets, QtCore, QtGui 
 # from lib.login import run_account #needs to be swapped to the new login system
 from app.lib.cookie import get_cookie, format_cookies
-from lib.encrypt import encrypt, decrypt, database_encrypt, database_decrypt # this will be the next thing to be transfered to the OOP 
-from lib.database import DatabaseManager
-from lib.settings import ConfigManager 
+from app.lib.encrypt import encrypt, decrypt, database_encrypt, database_decrypt # this will be the next thing to be transfered to the OOP 
+from app.lib.database import DatabaseManager
+from app.lib.settings import ConfigManager 
 
 
 
@@ -191,11 +191,15 @@ class AccountManagerApp(QtWidgets.QWidget):
     def load_css(self):
         css_file_path = os.path.join(os.path.dirname(__file__), 'styles.css')
         if os.path.exists(css_file_path):
-            with open(css_file_path, 'r') as f:
-                self.setStyleSheet(f.read())
+            try:
+                with open(css_file_path, 'r') as f:
+                    self.setStyleSheet(f.read())
+                return
+            except OSError as e:
+                print(f"Failed to read stylesheet {css_file_path}: {e}")
         else:
-            self.setStyleSheet("QLabel { color: white; } QPushButton { background-color: #2c2f33; color: white; border: none; } QPushButton:hover { background-color: #40444b; }")
             print("CSS file not found. Using default styles.")
+        self.setStyleSheet("QLabel { color: white; } QPushButton { background-color: #2c2f33; color: white; border: none; } QPushButton:hover { background-color: #40444b; }")
 
 
     def setup_ui(self):
