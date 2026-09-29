@@ -63,11 +63,13 @@ def test_first_run_generates_a_default_encryption_key(config):
     int(key, 16)
 
 
-def test_generated_keys_differ_between_installs(isolated_data_dir, monkeypatch):
+def test_generated_keys_differ_between_installs(isolate_data_dir):
     first = ConfigManager(runtime="os")
-    second_dir = isolated_data_dir / "other"
-    second_dir.mkdir()
-    monkeypatch.setenv("APPDATA", str(second_dir))
+
+    # A second "install" must live in a different directory, or it just re-reads
+    # the first one's settings.json. The `isolate_data_dir` fixture handles the
+    # Windows/Linux env-var difference for us.
+    isolate_data_dir()
     second = ConfigManager(runtime="os")
 
     assert first.get_default_encryption_key() != second.get_default_encryption_key()

@@ -30,6 +30,7 @@ Every test runs against a throwaway data directory. `DatabaseManager` and
 variables is what keeps the suite from touching a real user install.
 """
 
+import itertools
 import os
 import sys
 from pathlib import Path
@@ -51,7 +52,43 @@ def isolated_data_dir(tmp_path, monkeypatch):
     """
     data_dir = tmp_path / "userdata"
     data_dir.mkdir()
+    redirect_data_dir(monkeypatch, data_dir)
 
+    return data_dir
+
+
+@pytest.fixture
+def isolate_data_dir(tmp_path, monkeypatch):
+    """Return a callable that repoints the data directory at a new path.
+
+    `ConfigManager` and `DatabaseManager` resolve their paths from the ambient
+    environment at construction time, so a test that needs a *second* install
+    has to build it against a different directory. This exists so that the
+    platform branch lives in exactly one place: a test that set only
+    `APPDATA` would silently keep using `$HOME` when run on Linux, and the two
+    "installs" would resolve to the same file.
+
+    Directories are created under `tmp_path` so a test can never leave stray
+    install directories behind in the working tree.
+    """
+    counter = itertools.count()
+
+    def _isolate(name=None):
+        target = tmp_path / (name or f"install{next(counter)}")
+        target.mkdir(parents=True, exist_ok=True)
+        redirect_data_dir(monkeypatch, target)
+        return target
+
+    return _isolate
+
+
+def redirect_data_dir(monkeypatch, data_dir):
+    """Point the env vars `ConfigManager`/`DatabaseManager` actually read at `data_dir`.
+
+    Mirrors the `os.name == "nt"` branch in `app/lib/settings.py` and
+    `app/lib/database.py`: `%APPDATA%` on Windows, `$HOME` and
+    `$XDG_CONFIG_HOME` elsewhere.
+    """
     if os.name == "nt":
         monkeypatch.setenv("APPDATA", str(data_dir))
     else:
