@@ -30,6 +30,7 @@ import secrets
 import os
 import sys
 import base64
+import binascii
 from typing import Tuple
 
 class ConfigManager:
@@ -168,15 +169,25 @@ class ConfigManager:
         valadation_base64 = self.config_data["App"].get("valadation", "")
         salt_base64 = self.config_data["App"].get("salt", "")
 
-        if valadation_base64 and salt_base64:
+        if not valadation_base64 or not salt_base64:
+            return b"", b""
+
+        try:
             return base64.b64decode(valadation_base64), base64.b64decode(salt_base64)
-        return b"", b""
-    
+        except (binascii.Error, ValueError):
+            # Older installs stored the literal placeholder "ciphercheck" here, which is not
+            # valid base64. Treat an undecodable token as "no token set" rather than
+            # letting the error escape and break the new-user flow.
+            return b"", b""
+
     def get_salt(self) -> bytes:
         salt_base64 = self.config_data["App"].get("salt", "")
-        if salt_base64:
+        if not salt_base64:
+            return b""
+        try:
             return base64.b64decode(salt_base64)
-        return b""
+        except (binascii.Error, ValueError):
+            return b""
 
     # Setters
     def set_version(self, version):
@@ -264,8 +275,11 @@ class ConfigManager:
                 "rest": "10",
                 "first": True,
                 "valadation_truth": "ciphercheck",
-                "valadation": "ciphercheck",
-                "salt": "ciphercheck"
+                # `valadation` and `salt` are base64-encoded blobs written by set_valadation().
+                # They must start empty, not as a placeholder string: a non-base64 value makes
+                # get_valadation() raise instead of reporting "no token set".
+                "valadation": "",
+                "salt": ""
 
             }
         }

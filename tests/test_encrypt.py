@@ -27,9 +27,6 @@
 `encrypt` returns a single blob of `salt(16) || iv(16) || ciphertext`, which is
 what gets persisted in the `accounts.encrypted_password` column. `decrypt`
 reverses it. These tests are pure and local — no network, no database.
-
-`derive_key` prints the derived key to stdout, which is why the output is
-captured here; see test_derive_key_does_not_leak (xfail) for that.
 """
 
 import pytest
@@ -115,11 +112,7 @@ def test_derive_key_depends_on_salt_and_password():
     assert base != derive_key("different password", salt_a)
 
 
-@pytest.mark.xfail(
-    strict=False,
-    reason="Known bug: derive_key() prints the derived encryption key to stdout, "
-    "leaking it into any log or console capture.",
-)
 def test_derive_key_does_not_leak(capsys):
+    """The derived key is the account encryption key and must never be logged."""
     key = derive_key("password", b"\x01" * 16)
     assert key.hex() not in capsys.readouterr().out

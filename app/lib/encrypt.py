@@ -49,7 +49,10 @@ def derive_key(password: str, salt: bytes) -> bytes:
     
     @ returns The function `derive_key` takes a password as a string and a salt as bytes, then uses
     PBKDF2HMAC with SHA256 hashing algorithm to derive a key of length 32 bytes using 100,000
-    iterations. The derived key is then printed in hexadecimal format and returned as bytes.
+    iterations. The derived key is returned as bytes.
+    
+    The key is deliberately not logged. It is the account encryption key, so writing it to stdout
+    would leak it into any console capture or log file.
     
     """
     kdf = PBKDF2HMAC(
@@ -60,7 +63,6 @@ def derive_key(password: str, salt: bytes) -> bytes:
         backend=default_backend()
     )
     key = kdf.derive(password.encode())
-    print(f"Derived key: {key.hex()}")
     return key
 
 
