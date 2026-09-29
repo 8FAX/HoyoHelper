@@ -155,6 +155,10 @@ class ConfigManager:
 
     def get_app_first(self):
         return self.config_data["App"].get("first", "")
+
+    def get_app_last_run(self):
+        """Timestamp (UTC string) of the last completed check-in cycle, or "" if never."""
+        return self.config_data["App"].get("last_run", "")
     
     def get_default_encryption_key(self):
         return self.config_data["Database"].get("default_encryption_key", "")
@@ -218,6 +222,15 @@ class ConfigManager:
         self.config_data["App"]["first"] = first
         self.save_config()
 
+    def set_app_last_run(self, timestamp):
+        """Record when the last check-in cycle completed.
+
+        `timestamp` is a UTC string as produced by app.scheduler.format_timestamp().
+        An empty string clears the record, so the next start runs immediately.
+        """
+        self.config_data["App"]["last_run"] = timestamp or ""
+        self.save_config()
+
     def set_default_encryption_key(self, key):
         self.config_data["Database"]["default_encryption_key"] = key
         self.save_config()
@@ -274,6 +287,9 @@ class ConfigManager:
                 "Style": "dark",
                 "rest": "10",
                 "first": True,
+                # When the last check-in cycle completed, as a UTC timestamp string.
+                # Empty means "never run", which makes the scheduler run immediately.
+                "last_run": "",
                 "valadation_truth": "ciphercheck",
                 # `valadation` and `salt` are base64-encoded blobs written by set_valadation().
                 # They must start empty, not as a placeholder string: a non-base64 value makes

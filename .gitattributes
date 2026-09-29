@@ -1,0 +1,36 @@
+# Normalize line endings so the working tree matches what CI and other
+# platforms check out. Without this, core.autocrlf=true rewrites every text
+# file on checkout and byte-comparing a file against its git blob shows the
+# whole file as changed.
+* text=auto
+
+# Python and config files: normalize in the repo, CRLF in the working tree.
+*.py    text eol=lf
+*.toml  text eol=lf
+*.cfg   text eol=lf
+*.ini   text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+.gitattributes text eol=lf
+.gitignore     text eol=lf
+
+# Windows launchers must keep CRLF or cmd.exe misparses them.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Binary assets: never touch.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.db    binary
+*.exe   binary
+*.dll   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary

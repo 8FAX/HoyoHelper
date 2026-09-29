@@ -24,19 +24,31 @@
 
 FILE_VERSION = "0.1.1"
 
-import os
-import logging
-import time
+import argparse
 import asyncio
+import logging
+import os
+import time
+from datetime import UTC, datetime
 from typing import Optional
 
-from app.lib.database import DatabaseManager, Account
-from app.lib.login_manager import LoginManager
-from app.lib.webhook_manager import WebhookManager
-from app.lib.exceptions import HoyoHelperError, WebhookError
-from app.lib.cookie import get_cookie as get_daily_login_cookie_async, format_cookies
+from app.lib.cookie import format_cookies
+from app.lib.cookie import get_cookie as get_daily_login_cookie_async
+from app.lib.database import Account, DatabaseManager
+from app.lib.dry_run import DryRunWebhookManager
 from app.lib.encrypt import decrypt
+from app.lib.exceptions import HoyoHelperError, WebhookError
+from app.lib.login_manager import LoginManager
 from app.lib.settings import ConfigManager
+from app.lib.webhook_manager import WebhookManager
+from app.scheduler import (
+    DEFAULT_REST_HOURS,
+    format_timestamp,
+    next_run_at,
+    parse_rest_hours,
+    parse_timestamp,
+    seconds_until_next_run,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - [%(name)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -79,10 +91,14 @@ GAME_LINKS_MAP = {
 
 
 class WindolessApp:
-    def __init__(self):
+    def __init__(self, dry_run: bool = False):
         """
         The `__init__` function initializes a `WindolessApp` instance by setting up various managers,
         handling exceptions, loading configurations, and initializing necessary attributes.
+
+        @ param dry_run (bool) - When True, no real sign-in and no real Discord webhook is
+        performed; anything that would have been sent is logged instead. Defaults to False so
+        existing invocations behave exactly as before.
         
         .-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
         
@@ -94,6 +110,7 @@ class WindolessApp:
         
         """
         logger.info("Initializing WindolessApp...")
+        self.dry_run = dry_run
         self.runtime_environment = os.getenv('APP_RUNTIME', 'os').lower()
         
         self.config_manager = ConfigManager(runtime=self.runtime_environment)
@@ -104,13 +121,13 @@ class WindolessApp:
         except Exception as e:
             logger.critical(f"CRITICAL: Failed to initialize DatabaseManager: {e}", exc_info=True)
             try:
-                temp_webhook_mgr = WebhookManager()
+                temp_webhook_mgr = self._make_webhook_manager()
                 temp_webhook_mgr.send(f"CRITICAL ALERT: Failed to initialize DatabaseManager: {e}. HoYo Helper cannot run.")
             except Exception as wh_e_crit:
                 logger.error(f"Also failed to send critical DatabaseManager init error webhook: {wh_e_crit}")
             raise SystemExit(f"DatabaseManager initialization failed: {e}") from e
 
-        self.webhook_mgr = WebhookManager()
+        self.webhook_mgr = self._make_webhook_manager()
         self.login_mgr = LoginManager(self.webhook_mgr)
 
         if self.config_manager.get_app_first():
@@ -130,6 +147,21 @@ class WindolessApp:
 
         self.accounts: list[Account] = []
         logger.info("WindolessApp initialized successfully.")
+
+    def _make_webhook_manager(self):
+        """Build the webhook manager, swapping in the no-op one for a dry run."""
+        if self.dry_run:
+            logger.info("Dry run enabled: Discord webhooks will be logged, not sent.")
+            return DryRunWebhookManager()
+        return WebhookManager()
+
+    def resolve_rest_hours(self, override: float | None = None) -> float:
+        """Rest interval in hours: the --rest-hours override, else the App.rest setting."""
+        if override is not None:
+            return parse_rest_hours(override)
+        return parse_rest_hours(
+            self.config_manager.get_app_rest(), default=DEFAULT_REST_HOURS
+        )
 
     async def _get_and_update_cookie_if_needed_async(self, account: Account, account_webhook_url: Optional[str]) -> Optional[str]:
         """
@@ -205,6 +237,12 @@ class WindolessApp:
             except WebhookError as wh_e: logger.warning(f"Webhook failed for: {err_msg} - {wh_e}")
             return None
 
+        if self.dry_run:
+            logger.info(
+                "[DRY RUN] Account %s: skipping browser login for cookie generation.", nickname
+            )
+            return None
+
         try:
             raw_cookie_list = await get_daily_login_cookie_async(username, decrypted_password)
             if not raw_cookie_list:
@@ -243,7 +281,11 @@ class WindolessApp:
             "webhook": account_webhook_url
         }
         
-        if self.database_manager.update_account(account_to_update):
+        if self.dry_run:
+            logger.info(
+                "[DRY RUN] Account %s: skipping cookie persistence to the database.", nickname
+            )
+        elif self.database_manager.update_account(account_to_update):
             logger.info(f"Successfully updated cookie for account {nickname} in the database.")
         else:
             err_msg = f"Failed to save newly generated cookie for {nickname} to database. Using in-memory cookie for this session."
@@ -320,7 +362,15 @@ class WindolessApp:
                 game_short_name_for_lm = game_specific_links.get('short_name', game_code)
 
                 logger.info(f"Account {nickname}: Attempting daily check-in for {game_display_name} (using short_name: {game_short_name_for_lm}).")
-                
+
+                if self.dry_run:
+                    logger.info(
+                        "[DRY RUN] Account %s: skipping %s check-in. No request was sent to HoYoLAB.",
+                        nickname,
+                        game_display_name,
+                    )
+                    continue
+
                 try:
                     success = self.login_mgr.process_account(
                         cookie=daily_cookie,
@@ -426,17 +476,150 @@ class WindolessApp:
 
 # The above Python code snippet is a part of a script that handles the startup of an application. Here
 # is a breakdown of what the code is doing:
-if __name__ == "__main__":
+def build_parser() -> argparse.ArgumentParser:
+    """Describe the command line. Kept separate so tests can parse args without running."""
+    parser = argparse.ArgumentParser(
+        prog="hoyo-helper",
+        description="Run the HoYo Helper daily check-in.",
+    )
+    parser.add_argument(
+        "--schedule",
+        action="store_true",
+        help="Stay running and check in every --rest-hours, instead of running once and exiting.",
+    )
+    parser.add_argument(
+        "--rest-hours",
+        type=float,
+        default=None,
+        metavar="HOURS",
+        help="Hours between check-ins when --schedule is on. Overrides the App.rest setting.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Log what would happen without checking in, logging in, or sending any webhook.",
+    )
+    return parser
+
+
+def run_once(app: WindolessApp) -> None:
+    """One full check-in cycle."""
+    asyncio.run(app.main_async())
+
+
+def seconds_until_startup_run(last_run_raw: str, rest_hours: float, now: datetime) -> float:
+    """How long to wait before the first cycle, honouring a persisted last_run.
+
+    Without a usable last_run this returns 0, so a first run (or a corrupt
+    timestamp) still checks in immediately rather than waiting out a full
+    interval the app has no reason to sit through.
+    """
+    last_run = parse_timestamp(last_run_raw)
+    if last_run is None:
+        return 0.0
+    return seconds_until_next_run(next_run_at(last_run, rest_hours, now), now)
+
+
+def run_forever(app: WindolessApp, rest_hours: float) -> None:
+    """Check in on a repeating interval until interrupted.
+
+    The timestamp of each completed cycle is persisted, so restarting the app
+    resumes the schedule instead of checking in again straight away. Ctrl+C
+    exits cleanly without treating the interrupt as an error.
+    """
+    logger.info("Scheduler started. Checking in every %s hours.", rest_hours)
+
+    startup_delay = seconds_until_startup_run(
+        app.config_manager.get_app_last_run(), rest_hours, datetime.now(UTC)
+    )
+    if startup_delay > 0:
+        logger.info(
+            "Resuming schedule: a cycle already ran, next one is in %.2f hours.",
+            startup_delay / 3600,
+        )
+        _sleep_until(startup_delay)
+
+    while True:
+        started = datetime.now(UTC)
+        logger.info("Starting scheduled check-in cycle at %s.", format_timestamp(started))
+
+        run_once(app)
+
+        # Only record a completed cycle. A crash above leaves last_run untouched,
+        # so the next start tries again rather than skipping a day.
+        app.config_manager.set_app_last_run(format_timestamp(started))
+        logger.info("Cycle finished. Recorded last_run=%s.", format_timestamp(started))
+
+        next_run = next_run_at(started, rest_hours, datetime.now(UTC))
+        logger.info(
+            "Next check-in at %s, in %.2f hours.",
+            format_timestamp(next_run),
+            seconds_until_next_run(next_run, datetime.now(UTC)) / 3600,
+        )
+        _sleep_until(seconds_until_next_run(next_run, datetime.now(UTC)))
+
+
+def _sleep_until(delay_seconds: float) -> None:
+    """Sleep in slices, so a clock change is noticed and Ctrl+C lands promptly.
+
+    One long sleep would neither observe a corrected clock nor be interruptible
+    until the whole interval had passed.
+    """
+    deadline = datetime.now(UTC).timestamp() + delay_seconds
+    while True:
+        remaining = deadline - datetime.now(UTC).timestamp()
+        if remaining <= 0:
+            return
+        time.sleep(min(remaining, 60))
+
+
+def _report_startup_failure(error: BaseException, dry_run: bool) -> None:
+    """Best-effort alert when the app cannot start at all.
+
+    Ignored in a dry run: a dry run must not contact Discord even on the error path.
+    """
+    if dry_run:
+        return
     try:
-        app = WindolessApp()
-        asyncio.run(app.main_async())
+        emergency_webhook_mgr = WebhookManager()
+        if emergency_webhook_mgr.default_url:
+            emergency_webhook_mgr.send(
+                f"CRITICAL APP STARTUP FAILURE: {type(error).__name__} - {str(error)[:150]}. HoYo Helper did not start."
+            )
+    except Exception as final_wh_e:
+        logger.error(f"Additionally, failed to send emergency startup failure webhook: {final_wh_e}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Entry point. Returns a process exit code."""
+    args = build_parser().parse_args(argv)
+
+    try:
+        app = WindolessApp(dry_run=args.dry_run)
+        rest_hours = app.resolve_rest_hours(args.rest_hours)
     except SystemExit as se:
         logger.critical(f"Application exiting due to SystemExit: {se}")
+        _report_startup_failure(se, args.dry_run)
+        return 1
     except Exception as e:
         logger.critical(f"A critical error occurred at the application level: {e}", exc_info=True)
-        try:
-            emergency_webhook_mgr = WebhookManager() 
-            if emergency_webhook_mgr.default_url:
-                emergency_webhook_mgr.send(f"CRITICAL APP STARTUP FAILURE: {type(e).__name__} - {str(e)[:150]}. HoYo Helper did not start.")
-        except Exception as final_wh_e:
-            logger.error(f"Additionally, failed to send emergency startup failure webhook: {final_wh_e}")
+        _report_startup_failure(e, args.dry_run)
+        return 1
+
+    try:
+        if args.schedule:
+            run_forever(app, rest_hours)
+        else:
+            logger.info("Running a single check-in cycle. Pass --schedule to repeat daily.")
+            run_once(app)
+    except KeyboardInterrupt:
+        logger.info("Interrupted by user. Exiting.")
+        return 0
+    except Exception as e:
+        logger.critical(f"A critical error occurred while running: {e}", exc_info=True)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
